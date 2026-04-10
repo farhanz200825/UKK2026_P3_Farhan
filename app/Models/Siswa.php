@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Siswa extends Model
 {
     use HasFactory;
-
+    
     protected $table = 'siswa';
     protected $primaryKey = 'id';
-
+    
     protected $fillable = [
         'user_id',
         'nis',
@@ -23,16 +23,22 @@ class Siswa extends Model
         'alamat',
         'no_hp',
         'foto',
+        'id_kelas',
+        'id_jurusan'
     ];
-
-    protected $casts = [
-        'tanggal_lahir' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
+    
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    public function kelasRelasi()
+    {
+        return $this->belongsTo(Kelas::class, 'id_kelas');
+    }
+    
+    public function jurusanRelasi()
+    {
+        return $this->belongsTo(Jurusan::class, 'id_jurusan');
     }
 }

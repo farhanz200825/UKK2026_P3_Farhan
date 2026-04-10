@@ -5,24 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Guru extends Model
+class Petugas extends Model
 {
     use HasFactory;
     
-    protected $table = 'guru';
+    protected $table = 'petugas';
     protected $primaryKey = 'id';
     
     protected $fillable = [
         'user_id',
         'nip',
         'nama',
-        'mata_pelajaran',
-        'jabatan', // Tambahkan ini
         'jenis_kelamin',
         'tanggal_lahir',
         'alamat',
         'no_hp',
-        'foto'
+        'foto',
+        'status'
     ];
     
     protected $casts = [
@@ -36,21 +35,30 @@ class Guru extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
     
-    public function getJabatanBadgeAttribute()
+    public function aspirasi()
     {
-        $badges = [
-            'Guru' => 'primary',
-            'Kepala Sekolah' => 'danger',
-            'Wakil Kepala Sekolah' => 'warning',
-            'Wali Kelas' => 'success',
-            'Kepala Jurusan' => 'info'
-        ];
-        
-        return $badges[$this->jabatan] ?? 'secondary';
+        return $this->hasMany(Aspirasi::class, 'petugas_id');
     }
     
     public function getJenisKelaminTextAttribute()
     {
         return $this->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan';
+    }
+    
+    public function getStatusBadgeAttribute()
+    {
+        $badges = [
+            'Aktif' => 'success',
+            'Tidak Aktif' => 'danger'
+        ];
+        return $badges[$this->status] ?? 'secondary';
+    }
+    
+    public function getFotoUrlAttribute()
+    {
+        if ($this->foto && file_exists(public_path('storage/' . $this->foto))) {
+            return asset('storage/' . $this->foto);
+        }
+        return asset('assets/img/default-avatar.png');
     }
 }

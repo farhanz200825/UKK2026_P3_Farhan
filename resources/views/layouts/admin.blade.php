@@ -79,16 +79,44 @@
                 <!-- User Info -->
                 <div class="user-info p-3 border-bottom border-secondary mb-2">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                            style="width: 40px; height: 40px; font-size: 18px;">
-                            {{ strtoupper(substr(Auth::user()->email, 0, 1)) }}
+                        <!-- Foto Profil -->
+                        <div class="user-avatar-wrapper">
+                            @php
+                            $user = Auth::user();
+                            $fotoUrl = null;
+
+                            if($user->role == 'siswa' && $user->siswa && $user->siswa->foto) {
+                            $fotoUrl = asset('storage/' . $user->siswa->foto);
+                            } elseif($user->role == 'guru' && $user->guru && $user->guru->foto) {
+                            $fotoUrl = asset('storage/' . $user->guru->foto);
+                            }
+                            @endphp
+
+                            @if($fotoUrl)
+                            <img src="{{ $fotoUrl }}" alt="Profile" class="rounded-circle"
+                                style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #4680ff;">
+                            @else
+                            <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                style="width: 40px; height: 40px; font-size: 18px;">
+                                {{ strtoupper(substr(Auth::user()->email, 0, 1)) }}
+                            </div>
+                            @endif
                         </div>
+
                         <div class="user-details">
-                            <div class="text-white small">{{ Auth::user()->email }}</div>
+                            <div class="text-white small">
+                                @if($user->role == 'siswa' && $user->siswa)
+                                {{ $user->siswa->nama ?? $user->email }}
+                                @elseif($user->role == 'guru' && $user->guru)
+                                {{ $user->guru->nama ?? $user->email }}
+                                @else
+                                {{ $user->email }}
+                                @endif
+                            </div>
                             <small class="text-muted">
-                                @if(Auth::user()->role == 'admin')
+                                @if($user->role == 'admin')
                                 <span class="badge bg-primary">Administrator</span>
-                                @elseif(Auth::user()->role == 'guru')
+                                @elseif($user->role == 'guru')
                                 <span class="badge bg-success">Guru</span>
                                 @else
                                 <span class="badge bg-info">Siswa</span>
@@ -128,6 +156,15 @@
                         </a>
                     </li>
 
+                    <li class="pc-item {{ request()->routeIs('admin.kategori*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.kategori') }}" class="pc-link">
+                            <span class="pc-micon">
+                                <i class="ph ph-tag"></i>
+                            </span>
+                            <span class="pc-mtext">Master Data</span>
+                        </a>
+                    </li>
+
                     <li class="pc-item {{ request()->routeIs('admin.pengaduan*') ? 'active' : '' }}">
                         <a href="{{ route('admin.pengaduan') }}" class="pc-link">
                             <span class="pc-micon">
@@ -158,7 +195,7 @@
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
-                        <a href="" class="pc-link">
+                        <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
                             <span class="pc-micon">
                                 <i class="ph ph-chat-circle-text"></i>
                             </span>
@@ -167,7 +204,7 @@
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
-                        <a href="" class="pc-link">
+                        <a href="{{ route('guru.history') }}" class="pc-link">
                             <span class="pc-micon">
                                 <i class="ph ph-clock-counter-clockwise"></i>
                             </span>
@@ -222,8 +259,8 @@
                         </a>
                     </li>
 
-                    <li class="pc-item {{ request()->routeIs('siswa.aspirasi.feedback') ? 'active' : '' }}">
-                        <a href="{{ route('siswa.aspirasi.feedback') }}" class="pc-link">
+                    <li class="pc-item {{ request()->routeIs('') ? 'active' : '' }}">
+                        <a href="" class="pc-link">
                             <span class="pc-micon">
                                 <i class="ph ph-chat-dots"></i>
                             </span>
@@ -310,10 +347,10 @@
                             <i class="ph ph-diamonds-four"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end pc-h-dropdown">
-                            <a class="dropdown-item" href="">
+                            <a class="dropdown-item" href="{{ route('profile.my-account') }}">
                                 <i class="ph ph-user-circle"></i> My Account
                             </a>
-                            <a class="dropdown-item" href="">
+                            <a class="dropdown-item" href="{{ route('profile.settings') }}">
                                 <i class="ph ph-gear"></i> Settings
                             </a>
                             <div class="dropdown-divider"></div>
@@ -327,109 +364,125 @@
                         </div>
                     </li>
                     <li class="dropdown pc-h-item">
-                        <a
-                            class="pc-head-link dropdown-toggle arrow-none me-0"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            role="button"
-                            aria-haspopup="false"
-                            aria-expanded="false">
+                        <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                             <i class="ph ph-bell"></i>
-                            <span class="badge bg-success pc-h-badge">5</span>
+                            @php
+                            use App\Models\Aspirasi;
+                            use App\Models\Progres;
+
+                            $user = Auth::user();
+                            $notifikasiCount = 0;
+                            $notifikasiList = [];
+
+                            if($user->role == 'admin') {
+                            // Admin: aspirasi baru (Menunggu)
+                            $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
+                            $notifikasiCount += $aspirasiBaru;
+
+                            foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
+                            $notifikasiList[] = [
+                            'type' => 'new',
+                            'title' => 'Aspirasi Baru',
+                            'message' => 'Dari: ' . ($asp->user->siswa->nama ?? $asp->user->email),
+                            'time' => $asp->created_at->diffForHumans(),
+                            'link' => route('admin.pengaduan.detail', $asp->id_aspirasi)
+                            ];
+                            }
+                            } elseif($user->role == 'guru') {
+                            // Guru: aspirasi baru (Menunggu)
+                            $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
+                            $notifikasiCount += $aspirasiBaru;
+
+                            foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
+                            $notifikasiList[] = [
+                            'type' => 'new',
+                            'title' => 'Aspirasi Baru',
+                            'message' => 'Dari: ' . ($asp->user->siswa->nama ?? $asp->user->email),
+                            'time' => $asp->created_at->diffForHumans(),
+                            'link' => route('guru.aspirasi.detail', $asp->id_aspirasi)
+                            ];
+                            }
+                            } elseif($user->role == 'siswa') {
+                            // Siswa: progres/feedback baru
+                            $progresBaru = Progres::whereHas('aspirasi', function($q) use ($user) {
+                            $q->where('user_id', $user->id);
+                            })->where('created_at', '>=', now()->subDays(7))->count();
+                            $notifikasiCount += $progresBaru;
+
+                            $aspirasiIds = Aspirasi::where('user_id', $user->id)->pluck('id_aspirasi');
+                            foreach(Progres::with('user')->whereIn('id_aspirasi', $aspirasiIds)->latest()->take(5)->get() as $prog) {
+                            $isFeedback = str_contains($prog->keterangan_progres, 'Feedback:');
+                            $notifikasiList[] = [
+                            'type' => $isFeedback ? 'feedback' : 'progress',
+                            'title' => $isFeedback ? 'Feedback Baru' : 'Update Progres',
+                            'message' => $isFeedback ? str_replace('Feedback: ', '', substr($prog->keterangan_progres, 0, 50)) : substr($prog->keterangan_progres, 0, 50),
+                            'time' => $prog->created_at->diffForHumans(),
+                            'link' => route('siswa.aspirasi.detail', $prog->id_aspirasi)
+                            ];
+                            }
+                            }
+                            @endphp
+                            <span class="badge bg-success pc-h-badge">{{ $notifikasiCount > 0 ? $notifikasiCount : '' }}</span>
                         </a>
-                        <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown">
+                        <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown" style="min-width: 320px;">
                             <div class="dropdown-header d-flex align-items-center justify-content-between">
-                                <h5 class="m-0">Notifications</h5>
-                                <a href="#!" class="btn btn-link btn-sm">Mark all read</a>
+                                <h5 class="m-0">Notifikasi</h5>
+                                @if($notifikasiCount > 0)
+                                <a href="#" class="btn btn-link btn-sm" id="markAllRead">Tandai dibaca</a>
+                                @endif
                             </div>
                             <div class="dropdown-body text-wrap header-notification-scroll position-relative" style="max-height: calc(100vh - 215px)">
-                                <p class="text-span">Today</p>
-                                <div class="card bg-transparent mb-2 border-0">
-                                    <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                    <i class="ph ph-credit-card text-success" style="font-size: 16px;"></i>
+                                @if(count($notifikasiList) > 0)
+                                @foreach($notifikasiList as $notif)
+                                <a href="{{ $notif['link'] }}" class="text-decoration-none">
+                                    <div class="card bg-transparent mb-2 border-0 notification-item">
+                                        <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
+                                            <div class="d-flex">
+                                                <div class="flex-shrink-0">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                        style="width: 40px; height: 40px;
+                                             @if($notif['type'] == 'new') background: rgba(255, 193, 7, 0.1); @endif
+                                             @if($notif['type'] == 'feedback') background: rgba(13, 110, 253, 0.1); @endif
+                                             @if($notif['type'] == 'progress') background: rgba(25, 135, 84, 0.1); @endif">
+                                                        @if($notif['type'] == 'new')
+                                                        <i class="ph ph-warning-octagon text-warning" style="font-size: 20px;"></i>
+                                                        @elseif($notif['type'] == 'feedback')
+                                                        <i class="ph ph-chat-dots text-primary" style="font-size: 20px;"></i>
+                                                        @else
+                                                        <i class="ph ph-progress text-success" style="font-size: 20px;"></i>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <h6 class="text-body mb-1">{{ $notif['title'] }}</h6>
+                                                        <small class="text-muted">{{ $notif['time'] }}</small>
+                                                    </div>
+                                                    <p class="mb-0 text-muted small">{{ Str::limit($notif['message'], 60) }}</p>
                                                 </div>
                                             </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <span class="float-end text-sm text-muted">2 min ago</span>
-                                                <h5 class="text-body mb-2">Payment Received</h5>
-                                                <p class="mb-0">$2,499.00 payment received for Pro Plan subscription from Acme Corp</p>
-                                            </div>
                                         </div>
                                     </div>
+                                </a>
+                                @endforeach
+
+                                @if($notifikasiCount > 5)
+                                <div class="text-center py-2">
+                                    <a href="#" class="text-primary small">Lihat semua notifikasi</a>
                                 </div>
-                                <div class="card bg-transparent mb-2 border-0">
-                                    <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                    <i class="ph ph-users text-primary" style="font-size: 16px;"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <span class="float-end text-sm text-muted">1 hour ago</span>
-                                                <h5 class="text-body mb-2">New Team Member</h5>
-                                                <p class="mb-0">Sarah Johnson joined your workspace and was assigned to the Marketing team</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                @endif
+                                @else
+                                <div class="text-center py-4">
+                                    <i class="ph ph-bell-slash" style="font-size: 48px; color: #ccc;"></i>
+                                    <p class="mt-2 text-muted mb-0">Tidak ada notifikasi baru</p>
                                 </div>
-                                <div class="card bg-transparent mb-2 border-0">
-                                    <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                    <i class="ph ph-chart-line text-warning" style="font-size: 16px;"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <span class="float-end text-sm text-muted">3 hours ago</span>
-                                                <h5 class="text-body mb-2">Monthly Report Ready</h5>
-                                                <p class="mb-0">Your January 2025 analytics report is ready. Revenue up 24% vs last month</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p class="text-span">Yesterday</p>
-                                <div class="card bg-transparent mb-2 border-0">
-                                    <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                    <i class="ph ph-shield-check text-danger" style="font-size: 16px;"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <span class="float-end text-sm text-muted">18 hours ago</span>
-                                                <h5 class="text-body mb-2">Security Alert</h5>
-                                                <p class="mb-2">New login detected from San Francisco, CA. If this wasn't you, please secure your account</p>
-                                                <button class="btn btn-sm btn-outline-secondary me-2">Ignore</button>
-                                                <button class="btn btn-sm btn-danger">Secure Account</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card bg-transparent mb-2 border-0">
-                                    <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <img class="img-radius avatar rounded-0" src="{{ asset('assets/images/user/avatar-5.svg') }}" alt="Generic placeholder image" />
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <span class="float-end text-sm text-muted">5 hour ago</span>
-                                                <h5 class="text-body mb-2">Security</h5>
-                                                <p class="mb-0">Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of
-                                                    type and scrambled it to make a type</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                @endif
                             </div>
-                            <div class="text-center py-2">
-                                <a href="#!" class="link-danger">Clear all Notifications</a>
+                            @if(count($notifikasiList) > 0)
+                            <div class="text-center py-2 border-top">
+                                <a href="#" class="link-danger small" id="clearAllNotifications">Bersihkan semua</a>
                             </div>
+                            @endif
                         </div>
                     </li>
                 </ul>
@@ -461,7 +514,48 @@
         </div>
     </div>
     <!-- [ Main Content ] end -->
+    <script>
+        // Notifikasi real-time (refresh setiap 30 detik)
+        function checkNewNotifications() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newBadge = doc.querySelector('.pc-h-badge');
+                    const currentBadge = document.querySelector('.pc-h-badge');
 
+                    if (newBadge && currentBadge) {
+                        const newCount = newBadge.innerText;
+                        const currentCount = currentBadge.innerText;
+                        if (newCount !== currentCount) {
+                            location.reload();
+                        }
+                    }
+                })
+                .catch(error => console.log('Error checking notifications:', error));
+        }
+
+        // Cek notifikasi setiap 30 detik
+        setInterval(checkNewNotifications, 30000);
+
+        // Mark all read
+        document.getElementById('markAllRead')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Simpan ke localStorage bahwa notifikasi sudah dibaca
+            localStorage.setItem('notifications_read', Date.now());
+            const badge = document.querySelector('.pc-h-badge');
+            if (badge) badge.innerText = '';
+            location.reload();
+        });
+
+        // Clear all notifications
+        document.getElementById('clearAllNotifications')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('notifications_read');
+            location.reload();
+        });
+    </script>
     <!-- Required JS -->
     <script src="{{ asset('assets/js/plugins/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/simplebar.min.js') }}"></script>

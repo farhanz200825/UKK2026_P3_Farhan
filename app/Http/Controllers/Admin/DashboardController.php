@@ -6,9 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Siswa;
 use App\Models\Guru;
+use App\Models\Petugas;
 use App\Models\Aspirasi;
 use App\Models\Kategori;
 use App\Models\Progres;
+use App\Models\HistoryStatus;
+use App\Models\Jurusan;
+use App\Models\Kelas;
+use App\Models\Ruangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -22,12 +27,12 @@ class DashboardController extends Controller
         $totalGuru = Guru::count();
         $totalAspirasi = Aspirasi::count();
         $totalAdmin = User::where('role', 'admin')->count();
-        
+
         // Statistik berdasarkan status
         $aspirasiMenunggu = Aspirasi::where('status', 'Menunggu')->count();
         $aspirasiProses = Aspirasi::where('status', 'Proses')->count();
         $aspirasiSelesai = Aspirasi::where('status', 'Selesai')->count();
-        
+
         // Aspirasi per bulan (6 bulan terakhir)
         $bulanLabels = [];
         $bulanData = [];
@@ -38,30 +43,34 @@ class DashboardController extends Controller
                 ->whereMonth('created_at', $bulan->month)
                 ->count();
         }
-        
+
         return view('admin.dashboard', compact(
-            'totalSiswa', 'totalGuru', 'totalAspirasi', 'totalAdmin',
-            'aspirasiMenunggu', 'aspirasiProses', 'aspirasiSelesai',
-            'bulanLabels', 'bulanData'
+            'totalSiswa',
+            'totalGuru',
+            'totalAspirasi',
+            'totalAdmin',
+            'aspirasiMenunggu',
+            'aspirasiProses',
+            'aspirasiSelesai',
+            'bulanLabels',
+            'bulanData'
         ));
     }
 
-    // Manajemen User
+    // Manajemen User (Gabungan Admin, Guru, Siswa, Petugas)
     public function users()
     {
         $admins = User::where('role', 'admin')->get();
-        $gurus = User::where('role', 'guru')->with('guru')->get();
-        $siswas = User::where('role', 'siswa')->with('siswa')->get();
-        
-        return view('admin.users.index', compact('admins', 'gurus', 'siswas'));
+        $gurus = Guru::with('user')->get();
+        $siswas = Siswa::with('user')->get();
+        $petugas = Petugas::with('user')->get();
+        $allKelas = Kelas::all();
+        $allJurusan = Jurusan::all();
+
+        return view('admin.users.index', compact('admins', 'gurus', 'siswas', 'petugas', 'allKelas', 'allJurusan'));
     }
 
-    // CRUD Siswa
-    public function createSiswa()
-    {
-        return view('admin.users.create-siswa');
-    }
-
+    // ==================== CRUD SISWA ====================
     public function storeSiswa(Request $request)
     {
         $request->validate([
@@ -98,16 +107,10 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil ditambahkan');
     }
 
-    public function editSiswa($id)
-    {
-        $siswa = Siswa::with('user')->findOrFail($id);
-        return view('admin.users.edit-siswa', compact('siswa'));
-    }
-
     public function updateSiswa(Request $request, $id)
     {
         $siswa = Siswa::findOrFail($id);
-        
+
         $request->validate([
             'nis' => 'required|unique:siswa,nis,' . $id,
             'nama' => 'required',
@@ -131,7 +134,7 @@ class DashboardController extends Controller
             'no_hp' => $request->no_hp,
         ]);
 
-        if ($request->password) {
+        if ($request->filled('password')) {
             $request->validate(['password' => 'min:6']);
             $siswa->user->update(['password' => Hash::make($request->password)]);
         }
@@ -147,116 +150,295 @@ class DashboardController extends Controller
         $user = $siswa->user;
         $siswa->delete();
         $user->delete();
-        
+
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil dihapus');
     }
 
-    // CRUD Guru
-    public function createGuru()
-    {
-        return view('admin.users.create-guru');
-    }
-
+    // ==================== CRUD GURU (dengan jabatan) ====================
     public function storeGuru(Request $request)
     {
         $request->validate([
-            'nip' => 'required|unique:guru,nip',
-            'nama' => 'required',
-            'mata_pelajaran' => 'required',
-            'jenis_kelamin' => 'required',
-            'tanggal_lahir' => 'required|date',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:guru,nip',
+            'mata_pelajaran' => 'nullable|string|max:100',
+            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'guru',
+            'role' => 'guru'
         ]);
+
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
+        }
 
         Guru::create([
             'user_id' => $user->id,
             'nip' => $request->nip,
             'nama' => $request->nama,
             'mata_pelajaran' => $request->mata_pelajaran,
+            'jabatan' => $request->jabatan,
             'jenis_kelamin' => $request->jenis_kelamin,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat,
             'no_hp' => $request->no_hp,
+            'foto' => $fotoPath
         ]);
 
-        return redirect()->route('admin.users')->with('success', 'Data guru berhasil ditambahkan');
-    }
-
-    public function editGuru($id)
-    {
-        $guru = Guru::with('user')->findOrFail($id);
-        return view('admin.users.edit-guru', compact('guru'));
+        return redirect()->route('admin.users')->with('success', 'Guru berhasil ditambahkan');
     }
 
     public function updateGuru(Request $request, $id)
     {
         $guru = Guru::findOrFail($id);
-        
+
         $request->validate([
-            'nip' => 'required|unique:guru,nip,' . $id,
-            'nama' => 'required',
-            'mata_pelajaran' => 'required',
-            'jenis_kelamin' => 'required',
-            'tanggal_lahir' => 'required|date',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:guru,nip,' . $id,
+            'mata_pelajaran' => 'nullable|string|max:100',
+            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
             'email' => 'required|email|unique:users,email,' . $guru->user_id,
+            'password' => 'nullable|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        $userData = ['email' => $request->email];
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        $guru->user->update($userData);
+
+        if ($request->hasFile('foto')) {
+            if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
+                Storage::disk('public')->delete($guru->foto);
+            }
+            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
+            $guru->foto = $fotoPath;
+            $guru->save();
+        }
 
         $guru->update([
             'nip' => $request->nip,
             'nama' => $request->nama,
             'mata_pelajaran' => $request->mata_pelajaran,
+            'jabatan' => $request->jabatan,
             'jenis_kelamin' => $request->jenis_kelamin,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat,
             'no_hp' => $request->no_hp,
         ]);
 
-        if ($request->password) {
-            $request->validate(['password' => 'min:6']);
-            $guru->user->update(['password' => Hash::make($request->password)]);
-        }
-
-        $guru->user->update(['email' => $request->email]);
-
-        return redirect()->route('admin.users')->with('success', 'Data guru berhasil diupdate');
+        return redirect()->route('admin.users')->with('success', 'Guru berhasil diupdate');
     }
 
     public function destroyGuru($id)
     {
         $guru = Guru::findOrFail($id);
         $user = $guru->user;
+
+        if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
+            Storage::disk('public')->delete($guru->foto);
+        }
+
         $guru->delete();
         $user->delete();
-        
-        return redirect()->route('admin.users')->with('success', 'Data guru berhasil dihapus');
+
+        return redirect()->route('admin.users')->with('success', 'Guru berhasil dihapus');
     }
 
-    // Manajemen Kategori
+    // ==================== CRUD ADMIN ====================
+    public function storeAdmin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+        ]);
+
+        User::create([
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'admin',
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Admin berhasil ditambahkan');
+    }
+
+    public function updateAdmin(Request $request, $id)
+    {
+        $admin = User::findOrFail($id);
+
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $id,
+        ]);
+
+        $data = ['email' => $request->email];
+
+        if ($request->filled('password')) {
+            $request->validate(['password' => 'min:6']);
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $admin->update($data);
+
+        return redirect()->route('admin.users')->with('success', 'Admin berhasil diupdate');
+    }
+
+    public function destroyAdmin($id)
+    {
+        $admin = User::findOrFail($id);
+
+        if ($admin->id === auth()->id()) {
+            return redirect()->route('admin.users')->with('error', 'Anda tidak dapat menghapus akun sendiri');
+        }
+
+        $admin->delete();
+
+        return redirect()->route('admin.users')->with('success', 'Admin berhasil dihapus');
+    }
+
+    // ==================== CRUD PETUGAS ====================
+    public function storePetugas(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:petugas,nip',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'status' => 'required|in:Aktif,Tidak Aktif'
+        ]);
+
+        // Create user
+        $user = User::create([
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'petugas'
+        ]);
+
+        // Handle foto
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('foto_petugas', 'public');
+        }
+
+        // Create petugas
+        Petugas::create([
+            'user_id' => $user->id,
+            'nip' => $request->nip,
+            'nama' => $request->nama,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+            'foto' => $fotoPath,
+            'status' => $request->status
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Petugas berhasil ditambahkan');
+    }
+
+    public function updatePetugas(Request $request, $id)
+    {
+        $petugas = Petugas::findOrFail($id);
+
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:petugas,nip,' . $id,
+            'email' => 'required|email|unique:users,email,' . $petugas->user_id,
+            'password' => 'nullable|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'status' => 'required|in:Aktif,Tidak Aktif'
+        ]);
+
+        // Update user
+        $userData = ['email' => $request->email];
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        $petugas->user->update($userData);
+
+        // Handle foto
+        if ($request->hasFile('foto')) {
+            if ($petugas->foto && Storage::disk('public')->exists($petugas->foto)) {
+                Storage::disk('public')->delete($petugas->foto);
+            }
+            $fotoPath = $request->file('foto')->store('foto_petugas', 'public');
+            $petugas->foto = $fotoPath;
+        }
+
+        // Update petugas
+        $petugas->update([
+            'nip' => $request->nip,
+            'nama' => $request->nama,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+            'status' => $request->status
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Petugas berhasil diupdate');
+    }
+
+    public function destroyPetugas($id)
+    {
+        $petugas = Petugas::findOrFail($id);
+
+        if ($petugas->foto && Storage::disk('public')->exists($petugas->foto)) {
+            Storage::disk('public')->delete($petugas->foto);
+        }
+
+        $user = $petugas->user;
+        $petugas->delete();
+        $user->delete();
+
+        return redirect()->route('admin.users')->with('success', 'Petugas berhasil dihapus');
+    }
+
+    // ==================== MANAJEMEN KATEGORI & MASTER DATA ====================
     public function kategori()
     {
-        $kategoris = Kategori::all();
-        return view('admin.kategori.index', compact('kategoris'));
+        $kategoris = Kategori::withCount('aspirasi')->get();
+        $jurusans = Jurusan::withCount('kelas')->get();
+        $kelas = Kelas::with('jurusan')->withCount('siswa')->get();
+        $ruangans = Ruangan::withCount('aspirasi')->get();
+        $allJurusans = Jurusan::all();
+
+        return view('admin.kategori.index', compact('kategoris', 'jurusans', 'kelas', 'ruangans', 'allJurusans'));
     }
 
     public function storeKategori(Request $request)
     {
         $request->validate([
-            'nama_kategori' => 'required|unique:kategori,nama_kategori'
+            'nama_kategori' => 'required|unique:kategori,nama_kategori',
+            'deskripsi' => 'nullable|string'
         ]);
 
         Kategori::create([
-            'nama_kategori' => $request->nama_kategori
+            'nama_kategori' => $request->nama_kategori,
+            'deskripsi' => $request->deskripsi
         ]);
 
         return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil ditambahkan');
@@ -266,11 +448,13 @@ class DashboardController extends Controller
     {
         $kategori = Kategori::findOrFail($id);
         $request->validate([
-            'nama_kategori' => 'required|unique:kategori,nama_kategori,' . $id . ',id_kategori'
+            'nama_kategori' => 'required|unique:kategori,nama_kategori,' . $id . ',id_kategori',
+            'deskripsi' => 'nullable|string'
         ]);
 
         $kategori->update([
-            'nama_kategori' => $request->nama_kategori
+            'nama_kategori' => $request->nama_kategori,
+            'deskripsi' => $request->deskripsi
         ]);
 
         return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil diupdate');
@@ -280,50 +464,155 @@ class DashboardController extends Controller
     {
         $kategori = Kategori::findOrFail($id);
         $kategori->delete();
-        
+
         return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil dihapus');
     }
 
-    // Manajemen Aspirasi/Pengaduan
+    // ==================== CRUD JURUSAN ====================
+    public function storeJurusan(Request $request)
+    {
+        $request->validate([
+            'kode_jurusan' => 'required|unique:jurusan',
+            'nama_jurusan' => 'required',
+            'deskripsi' => 'nullable'
+        ]);
+
+        Jurusan::create($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Jurusan berhasil ditambahkan');
+    }
+
+    public function updateJurusan(Request $request, $id)
+    {
+        $request->validate([
+            'kode_jurusan' => 'required|unique:jurusan,kode_jurusan,' . $id . ',id_jurusan',
+            'nama_jurusan' => 'required',
+            'deskripsi' => 'nullable'
+        ]);
+
+        $jurusan = Jurusan::findOrFail($id);
+        $jurusan->update($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Jurusan berhasil diupdate');
+    }
+
+    public function destroyJurusan($id)
+    {
+        $jurusan = Jurusan::findOrFail($id);
+        $jurusan->delete();
+        return redirect()->route('admin.kategori')->with('success', 'Jurusan berhasil dihapus');
+    }
+
+    // ==================== CRUD KELAS ====================
+    public function storeKelas(Request $request)
+    {
+        $request->validate([
+            'nama_kelas' => 'required|unique:kelas',
+            'tingkat' => 'required',
+            'id_jurusan' => 'required|exists:jurusan,id_jurusan',
+            'kapasitas' => 'nullable|integer'
+        ]);
+
+        Kelas::create($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Kelas berhasil ditambahkan');
+    }
+
+    public function updateKelas(Request $request, $id)
+    {
+        $request->validate([
+            'nama_kelas' => 'required|unique:kelas,nama_kelas,' . $id . ',id_kelas',
+            'tingkat' => 'required',
+            'id_jurusan' => 'required|exists:jurusan,id_jurusan',
+            'kapasitas' => 'nullable|integer'
+        ]);
+
+        $kelas = Kelas::findOrFail($id);
+        $kelas->update($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Kelas berhasil diupdate');
+    }
+
+    public function destroyKelas($id)
+    {
+        $kelas = Kelas::findOrFail($id);
+        $kelas->delete();
+        return redirect()->route('admin.kategori')->with('success', 'Kelas berhasil dihapus');
+    }
+
+    // ==================== CRUD RUANGAN ====================
+    public function storeRuangan(Request $request)
+    {
+        $request->validate([
+            'kode_ruangan' => 'required|unique:ruangan',
+            'nama_ruangan' => 'required',
+            'jenis_ruangan' => 'required',
+            'lokasi' => 'nullable',
+            'kapasitas' => 'nullable|integer',
+            'kondisi' => 'required',
+            'deskripsi' => 'nullable'
+        ]);
+
+        Ruangan::create($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Ruangan berhasil ditambahkan');
+    }
+
+    public function updateRuangan(Request $request, $id)
+    {
+        $request->validate([
+            'kode_ruangan' => 'required|unique:ruangan,kode_ruangan,' . $id . ',id_ruangan',
+            'nama_ruangan' => 'required',
+            'jenis_ruangan' => 'required',
+            'lokasi' => 'nullable',
+            'kapasitas' => 'nullable|integer',
+            'kondisi' => 'required',
+            'deskripsi' => 'nullable'
+        ]);
+
+        $ruangan = Ruangan::findOrFail($id);
+        $ruangan->update($request->all());
+        return redirect()->route('admin.kategori')->with('success', 'Ruangan berhasil diupdate');
+    }
+
+    public function destroyRuangan($id)
+    {
+        $ruangan = Ruangan::findOrFail($id);
+        $ruangan->delete();
+        return redirect()->route('admin.kategori')->with('success', 'Ruangan berhasil dihapus');
+    }
+
+    // ==================== MANAJEMEN ASPIRASI/PENGADUAN ====================
     public function pengaduan(Request $request)
     {
         $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori']);
-        
-        // Filter
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         if ($request->filled('kategori')) {
             $query->where('id_kategori', $request->kategori);
         }
-        
+
         if ($request->filled('bulan')) {
             $query->whereMonth('created_at', $request->bulan);
         }
-        
+
         if ($request->filled('tahun')) {
             $query->whereYear('created_at', $request->tahun);
         }
-        
+
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('judul', 'like', '%' . $request->search . '%')
-                  ->orWhere('isi', 'like', '%' . $request->search . '%');
-            });
+            $query->where('keterangan', 'like', '%' . $request->search . '%');
         }
-        
+
         $aspirasi = $query->orderBy('created_at', 'desc')->paginate(10);
         $kategoris = Kategori::all();
-        
+
         return view('admin.pengaduan.index', compact('aspirasi', 'kategoris'));
     }
 
     public function pengaduanDetail($id)
     {
-        $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'progres.user'])->findOrFail($id);
+        $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'progres.user', 'historyStatus.pengubah'])->findOrFail($id);
         $kategoris = Kategori::all();
-        
+
         return view('admin.pengaduan.detail', compact('aspirasi', 'kategoris'));
     }
 
@@ -332,17 +621,16 @@ class DashboardController extends Controller
         $aspirasi = Aspirasi::findOrFail($id);
         $statusLama = $aspirasi->status;
         $statusBaru = $request->status;
-        
-        // Simpan history status
-        \App\Models\HistoryStatus::create([
+
+        HistoryStatus::create([
             'id_aspirasi' => $id,
             'status_lama' => $statusLama,
             'status_baru' => $statusBaru,
             'diubah_oleh' => auth()->id(),
         ]);
-        
+
         $aspirasi->update(['status' => $statusBaru]);
-        
+
         return redirect()->back()->with('success', 'Status aspirasi berhasil diupdate');
     }
 
@@ -351,14 +639,13 @@ class DashboardController extends Controller
         $request->validate([
             'feedback' => 'required'
         ]);
-        
-        // Simpan feedback sebagai progres
+
         Progres::create([
             'id_aspirasi' => $id,
             'user_id' => auth()->id(),
             'keterangan_progres' => 'Feedback: ' . $request->feedback,
         ]);
-        
+
         return redirect()->back()->with('success', 'Feedback berhasil ditambahkan');
     }
 
@@ -367,65 +654,28 @@ class DashboardController extends Controller
         $request->validate([
             'keterangan_progres' => 'required'
         ]);
-        
+
         Progres::create([
             'id_aspirasi' => $id,
             'user_id' => auth()->id(),
             'keterangan_progres' => $request->keterangan_progres,
         ]);
-        
+
         return redirect()->back()->with('success', 'Progres berhasil ditambahkan');
     }
 
-    // CRUD Admin
-public function storeAdmin(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:6',
-    ]);
+    public function destroyAspirasi($id)
+    {
+        $aspirasi = Aspirasi::findOrFail($id);
 
-    User::create([
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => 'admin',
-    ]);
+        if ($aspirasi->foto && Storage::disk('public')->exists($aspirasi->foto)) {
+            Storage::disk('public')->delete($aspirasi->foto);
+        }
 
-    return redirect()->route('admin.users')->with('success', 'Admin berhasil ditambahkan');
-}
+        Progres::where('id_aspirasi', $id)->delete();
+        HistoryStatus::where('id_aspirasi', $id)->delete();
+        $aspirasi->delete();
 
-public function updateAdmin(Request $request, $id)
-{
-    $admin = User::findOrFail($id);
-    
-    $request->validate([
-        'email' => 'required|email|unique:users,email,' . $id,
-    ]);
-
-    $data = ['email' => $request->email];
-    
-    if ($request->filled('password')) {
-        $request->validate(['password' => 'min:6']);
-        $data['password'] = Hash::make($request->password);
+        return redirect()->back()->with('success', 'Aspirasi berhasil dihapus');
     }
-    
-    $admin->update($data);
-
-    return redirect()->route('admin.users')->with('success', 'Admin berhasil diupdate');
-}
-
-public function destroyAdmin($id)
-{
-    $admin = User::findOrFail($id);
-    
-    // Cegah menghapus diri sendiri
-    if ($admin->id === auth()->id()) {
-        return redirect()->route('admin.users')->with('error', 'Anda tidak dapat menghapus akun sendiri');
-    }
-    
-    $admin->delete();
-    
-    return redirect()->route('admin.users')->with('success', 'Admin berhasil dihapus');
-}
-    
 }
