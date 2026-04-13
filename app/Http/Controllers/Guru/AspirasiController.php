@@ -66,26 +66,56 @@ class AspirasiController extends Controller
 
     // DATA ASPIRASI - Menampilkan semua aspirasi (index)
     // DATA ASPIRASI - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
-    public function index()
+    public function index(Request $request)
     {
         $guru = $this->getGuru();
 
         if ($guru->canCreateAspirasi()) {
             // GURU: hanya lihat aspirasi yang dia buat sendiri (belum selesai)
-            $aspirasi = Aspirasi::with(['kategori', 'ruangan'])
+            $query = Aspirasi::with(['kategori', 'ruangan'])
                 ->where('user_id', Auth::id())
-                ->where('status', '!=', 'Selesai') // Hanya yang belum selesai
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+                ->where('status', '!=', 'Selesai');
         } elseif ($guru->canViewAllAspirasi()) {
             // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi (belum selesai)
-            $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
-                ->where('status', '!=', 'Selesai') // Hanya yang belum selesai
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+            $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
+                ->where('status', '!=', 'Selesai');
         } else {
-            $aspirasi = collect();
+            $query = Aspirasi::whereRaw('1 = 0'); // Query kosong
         }
+
+        // Filter berdasarkan status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter berdasarkan kategori
+        if ($request->filled('kategori')) {
+            $query->where('id_kategori', $request->kategori);
+        }
+
+        // Filter berdasarkan ruangan
+        if ($request->filled('ruangan')) {
+            $query->where('id_ruangan', $request->ruangan);
+        }
+
+        // Filter berdasarkan tanggal
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Pencarian
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('keterangan', 'like', '%' . $request->search . '%')
+                    ->orWhere('lokasi', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $aspirasi = $query->orderBy('created_at', 'desc')->paginate(10);
 
         $statistik = [
             'total' => Aspirasi::count(),
@@ -95,8 +125,9 @@ class AspirasiController extends Controller
         ];
 
         $kategoris = Kategori::all();
+        $ruangans = Ruangan::all();
 
-        return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris'));
+        return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris', 'ruangans'));
     }
 
     // Form buat aspirasi (khusus Guru)
@@ -273,6 +304,7 @@ class AspirasiController extends Controller
         return redirect()->back()->with('success', $message);
     }
     // History
+    // History - Hanya menampilkan riwayat yang status_baru = Selesai
     public function history(Request $request)
     {
         $guru = $this->getGuru();
@@ -280,16 +312,17 @@ class AspirasiController extends Controller
         if ($guru->canCreateAspirasi()) {
             // GURU: hanya melihat history aspirasi yang dia buat sendiri (yang sudah selesai)
             $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
-                ->where('status_baru', 'Selesai') // Hanya yang statusnya menjadi Selesai
+                ->where('status_baru', 'Selesai') // HANYA yang statusnya menjadi Selesai
                 ->whereHas('aspirasi', function ($q) {
                     $q->where('user_id', Auth::id());
                 });
         } else {
             // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: melihat semua history yang selesai
             $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
-                ->where('status_baru', 'Selesai'); // Hanya yang statusnya menjadi Selesai
+                ->where('status_baru', 'Selesai'); // HANYA yang statusnya menjadi Selesai
         }
 
+        // Filter berdasarkan tanggal
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }

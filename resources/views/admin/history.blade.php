@@ -1,73 +1,60 @@
 @extends('layouts.admin')
 
-@section('title', 'History Perubahan Status')
+@section('title', 'History Aspirasi Selesai')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <!-- Statistik Cards -->
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <div class="card bg-primary text-white">
                     <div class="card-body text-center">
                         <h3>{{ $statistik['total'] }}</h3>
-                        <small>Total Perubahan</small>
+                        <small>Total Aspirasi Selesai</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['menunggu'] }}</h3>
-                        <small>Menjadi Menunggu</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['proses'] }}</h3>
-                        <small>Menjadi Proses</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <div class="card bg-success text-white">
                     <div class="card-body text-center">
                         <h3>{{ $statistik['selesai'] }}</h3>
-                        <small>Menjadi Selesai</small>
+                        <small>Selesai</small>
                     </div>
                 </div>
             </div>
         </div>
         
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="ph ph-clock-counter-clockwise"></i> Riwayat Perubahan Status Aspirasi</h5>
-                <small>Semua riwayat perubahan status dari waktu ke waktu</small>
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="ph ph-check-circle"></i> History Aspirasi Selesai</h5>
+                <small>Daftar aspirasi yang sudah selesai ditangani</small>
             </div>
             <div class="card-body">
+                <!-- Alert Info -->
+                <div class="alert alert-success mb-3">
+                    <i class="ph ph-check-circle"></i> 
+                    <strong>Informasi:</strong> Halaman ini menampilkan semua aspirasi yang sudah 
+                    <strong>Selesai</strong> ditangani.
+                </div>
+                
                 <!-- Filter -->
                 <form method="GET" class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <label class="form-label">Filter Status Baru</label>
-                        <select name="status" class="form-select">
-                            <option value="">Semua Status</option>
-                            <option value="Menunggu" {{ request('status') == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
-                            <option value="Proses" {{ request('status') == 'Proses' ? 'selected' : '' }}>Proses</option>
-                            <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Dari Tanggal</label>
                         <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Sampai Tanggal</label>
                         <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="ph ph-funnel"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.history') }}" class="btn btn-secondary w-100">
+                            <i class="ph ph-arrow-clockwise"></i> Reset
+                        </a>
                     </div>
                 </form>
 
@@ -76,14 +63,13 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">No</th>
-                                <th>Tanggal Perubahan</th>
+                                <th>Tanggal Selesai</th>
                                 <th>ID Aspirasi</th>
                                 <th>Pengirim</th>
                                 <th>Kategori</th>
                                 <th>Ruangan</th>
-                                <th>Status Lama</th>
-                                <th>Status Baru</th>
-                                <th>Diubah Oleh</th>
+                                <th>Status Akhir</th>
+                                <th>Ditangani Oleh</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -91,7 +77,20 @@
                             @forelse($history as $index => $h)
                             <tr>
                                 <td>{{ $history->firstItem() + $index }}</td>
-                                <td>{{ $h->created_at->format('d/m/Y H:i:s') }}</td>
+                                <td>
+                                    @php
+                                        $tanggal = '-';
+                                        if($h->created_at) {
+                                            if($h->created_at instanceof \Carbon\Carbon) {
+                                                $tanggal = $h->created_at->format('d/m/Y H:i:s');
+                                            } else {
+                                                $tanggal = date('d/m/Y H:i:s', strtotime($h->created_at));
+                                            }
+                                        }
+                                    @endphp
+                                    {{ $tanggal }}
+                                
+                                
                                 <td>{{ $h->id_aspirasi }}</td>
                                 <td>
                                     @php
@@ -103,17 +102,7 @@
                                 
                                 <td>{{ $h->aspirasi->kategori->nama_kategori ?? '-' }}</td>
                                 <td>{{ $h->aspirasi->ruangan->nama_ruangan ?? $h->aspirasi->lokasi }}</td>
-                                <td><span class="badge bg-secondary">{{ $h->status_lama }}</span></td>
-                                <td>
-                                    @php
-                                        $statusClass = 'secondary';
-                                        if($h->status_baru == 'Menunggu') $statusClass = 'warning';
-                                        if($h->status_baru == 'Proses') $statusClass = 'info';
-                                        if($h->status_baru == 'Selesai') $statusClass = 'success';
-                                    @endphp
-                                    <span class="badge bg-{{ $statusClass }}">{{ $h->status_baru }}</span>
-                                
-                                
+                                <td><span class="badge bg-success">Selesai</span></td>
                                 <td>
                                     @php
                                         $pengubah = $h->pengubah;
@@ -141,7 +130,15 @@
                               
                             @empty
                                 32
-                                    <td colspan="10" class="text-center">Belum ada riwayat perubahan status</td>
+                                    <td colspan="9" class="text-center">
+                                        <div class="py-4">
+                                            <i class="ph ph-check-circle ph-2x text-muted"></i>
+                                            <p class="mt-2">Belum ada aspirasi yang selesai</p>
+                                            <a href="{{ route('admin.pengaduan') }}" class="btn btn-sm btn-primary">
+                                                <i class="ph ph-list"></i> Lihat Data Aspirasi
+                                            </a>
+                                        </div>
+                                    </td>
                                 
                             @endforelse
                         </tbody>

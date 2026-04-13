@@ -596,16 +596,31 @@ class DashboardController extends Controller
     }
 
     // ==================== ASPIRASI MANAGEMENT ====================
+    // Data Aspirasi - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
     public function pengaduan(Request $request)
     {
-        $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres']);
+        $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres'])
+            ->where('status', '!=', 'Selesai'); // HANYA yang belum selesai
 
+        // Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         if ($request->filled('kategori')) {
             $query->where('id_kategori', $request->kategori);
+        }
+
+        if ($request->filled('ruangan')) {
+            $query->where('id_ruangan', $request->ruangan);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         if ($request->filled('search')) {
@@ -619,6 +634,7 @@ class DashboardController extends Controller
         $kategoris = Kategori::all();
         $ruangans = Ruangan::all();
 
+        // Statistik (semua status)
         $statistik = [
             'total' => Aspirasi::count(),
             'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
@@ -730,12 +746,9 @@ class DashboardController extends Controller
 
     public function history(Request $request)
     {
-        // Ambil semua history tanpa filter status_baru
-        $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah']);
-
-        if ($request->filled('status')) {
-            $query->where('status_baru', $request->status);
-        }
+        // Hanya ambil history dengan status_baru = Selesai
+        $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
+            ->where('status_baru', 'Selesai'); // HANYA yang statusnya menjadi Selesai
 
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -748,9 +761,9 @@ class DashboardController extends Controller
         $history = $query->orderBy('created_at', 'desc')->paginate(20);
 
         $statistik = [
-            'total' => HistoryStatus::count(),
-            'menunggu' => HistoryStatus::where('status_baru', 'Menunggu')->count(),
-            'proses' => HistoryStatus::where('status_baru', 'Proses')->count(),
+            'total' => HistoryStatus::where('status_baru', 'Selesai')->count(),
+            'menunggu' => 0, // Tidak ada karena hanya Selesai
+            'proses' => 0,    // Tidak ada karena hanya Selesai
             'selesai' => HistoryStatus::where('status_baru', 'Selesai')->count(),
         ];
 
