@@ -18,7 +18,9 @@ class Progres extends Model
         'keterangan_progres'
     ];
     
+    // Tabel progres hanya memiliki created_at, tidak ada updated_at
     public $timestamps = true;
+    const UPDATED_AT = null;
     
     public function aspirasi()
     {
@@ -28,21 +30,5 @@ class Progres extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-    
-    // Helper untuk mendapatkan nama pemberi progres
-    public function getNamaUserAttribute()
-    {
-        if ($this->user) {
-            if ($this->user->role == 'siswa' && $this->user->siswa) {
-                return $this->user->siswa->nama;
-            } elseif ($this->user->role == 'guru' && $this->user->guru) {
-                return $this->user->guru->nama;
-            } elseif ($this->user->role == 'petugas' && $this->user->petugas) {
-                return $this->user->petugas->nama;
-            }
-            return $this->user->email;
-        }
-        return 'Sistem';
     }
 }
