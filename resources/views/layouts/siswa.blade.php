@@ -179,6 +179,83 @@
                     </li>
                     @endif
 
+                    <!-- ==================== MENU UNTUK GURU ==================== -->
+                    @if(Auth::user()->role == 'guru')
+                    @php $guru = Auth::user()->guru; @endphp
+
+                    <li class="pc-item pc-caption">
+                        <label>Navigasi Utama</label>
+                    </li>
+
+                    <li class="pc-item {{ request()->routeIs('guru.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('guru.dashboard') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-house-line"></i></span>
+                            <span class="pc-mtext">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Menu untuk GURU (bisa membuat aspirasi) -->
+                    @if($guru->canCreateAspirasi())
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.create') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.create') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-pencil-line"></i></span>
+                            <span class="pc-mtext">Buat Aspirasi</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu Data Aspirasi untuk semua yang bisa melihat -->
+                    @if($guru->canViewAllAspirasi() || $guru->canCreateAspirasi())
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-list"></i></span>
+                            <span class="pc-mtext">
+                                @if($guru->canCreateAspirasi())
+                                Daftar Aspirasi Saya
+                                @else
+                                Data Aspirasi
+                                @endif
+                            </span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu untuk KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN (statistik) -->
+                    @if($guru->canViewStatistik())
+                    <li class="pc-item {{ request()->routeIs('guru.statistik') ? 'active' : '' }}">
+                        <a href="{{ route('guru.statistik') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-chart-line"></i></span>
+                            <span class="pc-mtext">Statistik</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu HISTORY -->
+                    <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
+                        <a href="{{ route('guru.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">
+                                @if($guru->canCreateAspirasi())
+                                History Saya
+                                @else
+                                History Aspirasi
+                                @endif
+                            </span>
+                        </a>
+                    </li>
+
+                    @endif
+
+                    <!-- Menu HISTORY untuk SEMUA JABATAN GURU -->
+                    <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
+                        <a href="{{ route('guru.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">History Aspirasi</span>
+                        </a>
+                    </li>
+
+                    @endif
+
                     <!-- ==================== MENU UNTUK PETUGAS ==================== -->
                     @if(Auth::user()->role == 'petugas')
                     <li class="pc-item pc-caption">

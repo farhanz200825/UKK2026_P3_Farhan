@@ -29,19 +29,16 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // Ambil data tambahan berdasarkan role
+        // Load relasi sesuai role
         if ($user->role == 'siswa') {
+            $user->load('siswa');
             $profile = $user->siswa;
-            // Format tanggal lahir jika ada
-            if ($profile && $profile->tanggal_lahir) {
-                $profile->tanggal_lahir_formatted = date('Y-m-d', strtotime($profile->tanggal_lahir));
-            }
         } elseif ($user->role == 'guru') {
+            $user->load('guru');
             $profile = $user->guru;
-            // Format tanggal lahir jika ada
-            if ($profile && $profile->tanggal_lahir) {
-                $profile->tanggal_lahir_formatted = date('Y-m-d', strtotime($profile->tanggal_lahir));
-            }
+        } elseif ($user->role == 'petugas') {
+            $user->load('petugas');
+            $profile = $user->petugas;
         } else {
             $profile = null;
         }
@@ -55,40 +52,53 @@ class ProfileController extends Controller
 
         $request->validate([
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:6|confirmed',
+            'no_hp' => 'nullable|string|max:15',
+            'alamat' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:L,P',
+            'password' => 'nullable|min:6|confirmed'
         ]);
 
-        $user->email = $request->email;
+        // Update user email
+        $user->update(['email' => $request->email]);
 
+        // Update password jika diisi
         if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+            $user->update(['password' => Hash::make($request->password)]);
         }
 
-        $user->save();
-
-        // Update profile berdasarkan role
+        // Update data profile berdasarkan role
         if ($user->role == 'siswa' && $user->siswa) {
             $user->siswa->update([
-                'nama' => $request->nama,
-                'kelas' => $request->kelas,
-                'jurusan' => $request->jurusan,
-                'jenis_kelamin' => $request->jenis_kelamin,
-                'tanggal_lahir' => $request->tanggal_lahir,
+                'nama' => $request->nama ?? $user->siswa->nama,
+                'kelas' => $request->kelas ?? $user->siswa->kelas,
+                'jurusan' => $request->jurusan ?? $user->siswa->jurusan,
                 'no_hp' => $request->no_hp,
                 'alamat' => $request->alamat,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'jenis_kelamin' => $request->jenis_kelamin
             ]);
         } elseif ($user->role == 'guru' && $user->guru) {
             $user->guru->update([
-                'nama' => $request->nama,
-                'mata_pelajaran' => $request->mata_pelajaran,
-                'jenis_kelamin' => $request->jenis_kelamin,
-                'tanggal_lahir' => $request->tanggal_lahir,
+                'nama' => $request->nama ?? $user->guru->nama,
+                'mata_pelajaran' => $request->mata_pelajaran ?? $user->guru->mata_pelajaran,
                 'no_hp' => $request->no_hp,
                 'alamat' => $request->alamat,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'jenis_kelamin' => $request->jenis_kelamin
+            ]);
+        } elseif ($user->role == 'petugas' && $user->petugas) {
+            $user->petugas->update([
+                'nama' => $request->nama ?? $user->petugas->nama,
+                'status' => $request->status ?? $user->petugas->status,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'jenis_kelamin' => $request->jenis_kelamin
             ]);
         }
 
-        return redirect()->back()->with('success', 'Profil berhasil diperbarui');
+        return redirect()->route('profile.settings')->with('success', 'Profil berhasil diupdate');
     }
 
     public function updatePhoto(Request $request)

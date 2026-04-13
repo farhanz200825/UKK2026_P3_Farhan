@@ -1,4 +1,4 @@
-@extends('layouts.petugas')
+@extends('layouts.admin')
 
 @section('title', 'Dashboard Petugas')
 
@@ -6,53 +6,33 @@
 <div class="row">
     <div class="col-md-3">
         <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Aspirasi</h6>
-                        <h2 class="mb-0">{{ $totalAspirasi }}</h2>
-                    </div>
-                    <i class="ph ph-chat-circle ph-2x"></i>
-                </div>
+            <div class="card-body text-center">
+                <h3>{{ $totalAspirasi }}</h3>
+                <small>Total Aspirasi</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Menunggu</h6>
-                        <h2 class="mb-0">{{ $aspirasiMenunggu }}</h2>
-                    </div>
-                    <i class="ph ph-clock ph-2x"></i>
-                </div>
+            <div class="card-body text-center">
+                <h3>{{ $aspirasiMenunggu }}</h3>
+                <small>Menunggu</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Diproses</h6>
-                        <h2 class="mb-0">{{ $aspirasiProses }}</h2>
-                    </div>
-                    <i class="ph ph-spinner ph-2x"></i>
-                </div>
+            <div class="card-body text-center">
+                <h3>{{ $aspirasiProses }}</h3>
+                <small>Diproses</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Selesai</h6>
-                        <h2 class="mb-0">{{ $aspirasiSelesai }}</h2>
-                    </div>
-                    <i class="ph ph-check-circle ph-2x"></i>
-                </div>
+            <div class="card-body text-center">
+                <h3>{{ $aspirasiSelesai }}</h3>
+                <small>Selesai</small>
             </div>
         </div>
     </div>
@@ -66,42 +46,58 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Siswa</th>
+                                <th>Siswa/Guru</th>
                                 <th>Kategori</th>
-                                <th>Lokasi</th>
+                                <th>Ruangan</th>
                                 <th>Status</th>
+                                <th>Tanggal</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($aspirasiAktif as $aspirasi)
+                            @forelse($aspirasiAktif as $a)
                             <tr>
-                                <td>{{ $aspirasi->id_aspirasi }}</td>
-                                <td>{{ $aspirasi->user->siswa->nama ?? '-' }}</td>
-                                <td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td>
-                                <td>{{ $aspirasi->lokasi }}</td>
+                                <td>{{ $a->id_aspirasi }}</td>
                                 <td>
-                                    <span class="badge bg-{{ $aspirasi->status == 'Selesai' ? 'success' : ($aspirasi->status == 'Proses' ? 'warning' : 'secondary') }}">
-                                        {{ $aspirasi->status }}
+                                    @php
+                                        $pengirim = $a->user->siswa ?? $a->user->guru;
+                                    @endphp
+                                    {{ $pengirim->nama ?? $a->user->email }}
+                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                
+                                
+                                <td>{{ $a->kategori->nama_kategori ?? '-' }}</td>
+                                <td>{{ $a->ruangan->nama_ruangan ?? $a->lokasi }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $a->status == 'Selesai' ? 'success' : ($a->status == 'Proses' ? 'info' : 'warning') }}">
+                                        {{ $a->status }}
                                     </span>
-                                </td>
+                                
+                                
+                                <td>{{ $a->created_at->format('d/m/Y') }}</td>
                                 <td>
-                                    <a href="{{ route('petugas.aspirasi.detail', $aspirasi->id_aspirasi) }}" class="btn btn-sm btn-info">
+                                    <a href="{{ route('petugas.aspirasi.detail', $a->id_aspirasi) }}" class="btn btn-sm btn-info">
                                         <i class="ph ph-eye"></i> Detail
                                     </a>
-                                </td>
-                            </tr>
+                                
+                              
                             @empty
-                            <tr><td colspan="6" class="text-center">Tidak ada aspirasi aktif</td></tr>
+                                32
+                                    <td colspan="7" class="text-center">Tidak ada aspirasi aktif</td>
+                                
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                {{ $aspirasiAktif->links() }}
+                <div class="mt-3 text-center">
+                    <a href="{{ route('petugas.aspirasi.index') }}" class="btn btn-sm btn-primary">
+                        <i class="ph ph-list"></i> Lihat Semua Aspirasi
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -111,26 +107,20 @@
                 <h6 class="mb-0"><i class="ph ph-chart-line"></i> Statistik Bulanan</h6>
             </div>
             <div class="card-body">
-                <canvas id="chartAspirasi" height="250"></canvas>
+                <canvas id="chartAspirasi" height="200"></canvas>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row mt-3">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body bg-light">
-                <div class="d-flex align-items-center">
-                    <i class="ph ph-info ph-2x text-primary me-3"></i>
-                    <div>
-                        <h6 class="mb-1">Selamat Datang, {{ $petugas->nama }}</h6>
-                        <p class="mb-0 text-muted small">
-                            Anda dapat mengelola aspirasi yang masuk, memberikan feedback, 
-                            mengupdate progres, dan mengubah status aspirasi menjadi Proses atau Selesai.
-                        </p>
-                    </div>
-                </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="ph ph-info"></i> Informasi Petugas</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><th>Nama</th><td>{{ $petugas->nama }}</td></tr>
+                    <tr><th>NIP</th><td>{{ $petugas->nip ?? '-' }}</td></tr>
+                    <tr><th>Status</th><td><span class="badge bg-{{ $petugas->status_badge }}">{{ $petugas->status }}</span></td></tr>
+                </table>
             </div>
         </div>
     </div>

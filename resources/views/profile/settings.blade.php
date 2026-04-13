@@ -15,6 +15,8 @@
                             $fotoPath = asset('storage/' . $user->siswa->foto);
                         } elseif($user->role == 'guru' && $user->guru && $user->guru->foto) {
                             $fotoPath = asset('storage/' . $user->guru->foto);
+                        } elseif($user->role == 'petugas' && $user->petugas && $user->petugas->foto) {
+                            $fotoPath = asset('storage/' . $user->petugas->foto);
                         }
                     @endphp
                     
@@ -41,8 +43,25 @@
                 </form>
                 
                 <hr>
-                <h5>{{ $user->email }}</h5>
+                @php
+                    $displayName = '-';
+                    if($user->role == 'siswa' && $user->siswa) {
+                        $displayName = $user->siswa->nama;
+                    } elseif($user->role == 'guru' && $user->guru) {
+                        $displayName = $user->guru->nama;
+                    } elseif($user->role == 'petugas' && $user->petugas) {
+                        $displayName = $user->petugas->nama;
+                    } else {
+                        $displayName = $user->email;
+                    }
+                @endphp
+                <h5>{{ $displayName }}</h5>
                 <span class="badge bg-primary">{{ ucfirst($user->role) }}</span>
+                @if($user->role == 'petugas' && $user->petugas)
+                    <span class="badge bg-{{ $user->petugas->status == 'Aktif' ? 'success' : 'danger' }} mt-1">
+                        {{ $user->petugas->status }}
+                    </span>
+                @endif
             </div>
         </div>
     </div>
@@ -77,76 +96,94 @@
                     @method('PUT')
                     
                     <div class="row">
-                        <!-- Data Diri (berdasarkan role) -->
-                        @if($user->role == 'siswa')
+                        <!-- SISWA -->
+                        @if($user->role == 'siswa' && $user->siswa)
                         <div class="col-md-6 mb-3">
                             <label class="form-label">NIS</label>
-                            <input type="text" class="form-control" value="{{ $profile->nis ?? '-' }}" disabled>
+                            <input type="text" class="form-control" value="{{ $user->siswa->nis ?? '-' }}" disabled>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nama Lengkap</label>
-                            <input type="text" name="nama" class="form-control" value="{{ old('nama', $profile->nama ?? '') }}" required>
+                            <input type="text" name="nama" class="form-control" value="{{ old('nama', $user->siswa->nama ?? '') }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Kelas</label>
-                            <input type="text" name="kelas" class="form-control" value="{{ old('kelas', $profile->kelas ?? '') }}" required>
+                            <input type="text" name="kelas" class="form-control" value="{{ old('kelas', $user->siswa->kelas ?? '') }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Jurusan</label>
-                            <input type="text" name="jurusan" class="form-control" value="{{ old('jurusan', $profile->jurusan ?? '') }}" required>
+                            <input type="text" name="jurusan" class="form-control" value="{{ old('jurusan', $user->siswa->jurusan ?? '') }}">
                         </div>
-                        @elseif($user->role == 'guru')
+                        
+                        <!-- GURU -->
+                        @elseif($user->role == 'guru' && $user->guru)
                         <div class="col-md-6 mb-3">
                             <label class="form-label">NIP</label>
-                            <input type="text" class="form-control" value="{{ $profile->nip ?? '-' }}" disabled>
+                            <input type="text" class="form-control" value="{{ $user->guru->nip ?? '-' }}" disabled>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nama Lengkap</label>
-                            <input type="text" name="nama" class="form-control" value="{{ old('nama', $profile->nama ?? '') }}" required>
+                            <input type="text" name="nama" class="form-control" value="{{ old('nama', $user->guru->nama ?? '') }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Mata Pelajaran</label>
-                            <input type="text" name="mata_pelajaran" class="form-control" value="{{ old('mata_pelajaran', $profile->mata_pelajaran ?? '') }}" required>
+                            <input type="text" name="mata_pelajaran" class="form-control" value="{{ old('mata_pelajaran', $user->guru->mata_pelajaran ?? '') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Jabatan</label>
+                            <input type="text" class="form-control" value="{{ $user->guru->jabatan ?? '-' }}" disabled>
+                        </div>
+                        
+                        <!-- PETUGAS -->
+                        @elseif($user->role == 'petugas' && $user->petugas)
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">NIP</label>
+                            <input type="text" class="form-control" value="{{ $user->petugas->nip ?? '-' }}" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Lengkap</label>
+                            <input type="text" name="nama" class="form-control" value="{{ old('nama', $user->petugas->nama ?? '') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-control">
+                                <option value="Aktif" {{ old('status', $user->petugas->status ?? '') == 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                                <option value="Tidak Aktif" {{ old('status', $user->petugas->status ?? '') == 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                            </select>
+                            <small class="text-muted">Status keaktifan petugas</small>
                         </div>
                         @endif
                         
                         <!-- Field yang sama untuk semua role -->
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Jenis Kelamin</label>
-                            <select name="jenis_kelamin" class="form-control" required>
+                            <select name="jenis_kelamin" class="form-control">
+                                <option value="">Pilih Jenis Kelamin</option>
                                 <option value="L" {{ old('jenis_kelamin', $profile->jenis_kelamin ?? '') == 'L' ? 'selected' : '' }}>Laki-laki</option>
                                 <option value="P" {{ old('jenis_kelamin', $profile->jenis_kelamin ?? '') == 'P' ? 'selected' : '' }}>Perempuan</option>
                             </select>
                         </div>
                         
-                        <!-- PERBAIKAN: Tanggal Lahir -->
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Tanggal Lahir</label>
                             @php
                                 $tanggalLahir = '';
                                 if(isset($profile->tanggal_lahir) && $profile->tanggal_lahir) {
-                                    // Cek apakah sudah dalam format Y-m-d
-                                    if(strpos($profile->tanggal_lahir, '-') !== false) {
-                                        $tanggalLahir = $profile->tanggal_lahir;
-                                    } else {
-                                        // Konversi dari format lain ke Y-m-d
-                                        $tanggalLahir = date('Y-m-d', strtotime($profile->tanggal_lahir));
-                                    }
+                                    $tanggalLahir = date('Y-m-d', strtotime($profile->tanggal_lahir));
                                 }
                             @endphp
-                           <input type="date" name="tanggal_lahir" class="form-control" 
-       value="{{ old('tanggal_lahir', $profile->tanggal_lahir_formatted ?? '') }}" required>
+                            <input type="date" name="tanggal_lahir" class="form-control" value="{{ old('tanggal_lahir', $tanggalLahir) }}">
                             <small class="text-muted">Format: YYYY-MM-DD</small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label">No HP</label>
-                            <input type="text" name="no_hp" class="form-control" value="{{ old('no_hp', $profile->no_hp ?? '') }}" required>
+                            <input type="text" name="no_hp" class="form-control" value="{{ old('no_hp', $profile->no_hp ?? '') }}">
                         </div>
                         
                         <div class="col-12 mb-3">
                             <label class="form-label">Alamat Lengkap</label>
-                            <textarea name="alamat" class="form-control" rows="3" required>{{ old('alamat', $profile->alamat ?? '') }}</textarea>
+                            <textarea name="alamat" class="form-control" rows="3">{{ old('alamat', $profile->alamat ?? '') }}</textarea>
                         </div>
                         
                         <div class="col-md-6 mb-3">

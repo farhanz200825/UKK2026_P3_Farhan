@@ -4,16 +4,40 @@ namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aspirasi;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $totalAspirasi = Aspirasi::where('user_id', auth()->id())->count();
-        $aspirasiMenunggu = Aspirasi::where('user_id', auth()->id())->where('status', 'Menunggu')->count();
-        $aspirasiSelesai = Aspirasi::where('user_id', auth()->id())->where('status', 'Selesai')->count();
+        $siswa = Auth::user()->siswa;
         
-        return view('siswa.dashboard', compact('totalAspirasi', 'aspirasiMenunggu', 'aspirasiSelesai'));
+        $aspirasiAktif = Aspirasi::where('user_id', Auth::id())
+            ->where('status', '!=', 'Selesai')
+            ->with('kategori')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $aspirasiSelesai = Aspirasi::where('user_id', Auth::id())
+            ->where('status', 'Selesai')
+            ->with('kategori')
+            ->orderBy('updated_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        $totalAspirasi = Aspirasi::where('user_id', Auth::id())->count();
+        $totalMenunggu = Aspirasi::where('user_id', Auth::id())->where('status', 'Menunggu')->count();
+        $totalProses = Aspirasi::where('user_id', Auth::id())->where('status', 'Proses')->count();
+        $totalSelesai = Aspirasi::where('user_id', Auth::id())->where('status', 'Selesai')->count();
+        
+        return view('siswa.dashboard', compact(
+            'siswa', 
+            'aspirasiAktif', 
+            'aspirasiSelesai',
+            'totalAspirasi',
+            'totalMenunggu',
+            'totalProses',
+            'totalSelesai'
+        ));
     }
 }

@@ -4,181 +4,331 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aspirasi;
+use App\Models\Kategori;
+use App\Models\Ruangan;
 use App\Models\Progres;
 use App\Models\HistoryStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class AspirasiController extends Controller
 {
-    // Menampilkan semua aspirasi yang belum selesai
-    public function index(Request $request)
+    private function getGuru()
     {
-        $query = Aspirasi::with(['user.siswa', 'kategori'])
-            ->where('status', '!=', 'Selesai');
-        
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->filled('kategori')) {
-            $query->where('id_kategori', $request->kategori);
-        }
-        
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('lokasi', 'like', '%' . $request->search . '%')
-                  ->orWhere('keterangan', 'like', '%' . $request->search . '%');
-            });
-        }
-        
-        $aspirasi = $query->orderBy('created_at', 'desc')->paginate(10);
-        $kategoris = \App\Models\Kategori::all();
-        
-        return view('guru.aspirasi.index', compact('aspirasi', 'kategoris'));
+        return Auth::user()->guru;
     }
-    
-    // History aspirasi (status selesai)
-    public function history(Request $request)
+
+    // DASHBOARD - Menampilkan ringkasan statistik
+    public function dashboard()
     {
-        $query = Aspirasi::with(['user.siswa', 'kategori'])
-            ->where('status', 'Selesai');
-        
-        if ($request->filled('kategori')) {
-            $query->where('id_kategori', $request->kategori);
+        $guru = $this->getGuru();
+
+        // Statistik
+        $statistik = [
+            'total' => Aspirasi::count(),
+            'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
+            'proses' => Aspirasi::where('status', 'Proses')->count(),
+            'selesai' => Aspirasi::where('status', 'Selesai')->count(),
+        ];
+
+        // Aspirasi terbaru (5 terakhir)
+        if ($guru->canCreateAspirasi()) {
+            // GURU: hanya lihat aspirasi yang dia buat sendiri
+            $aspirasiTerbaru = Aspirasi::with(['kategori', 'ruangan'])
+                ->where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+        } elseif ($guru->canViewAllAspirasi()) {
+            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN, WALI KELAS: lihat semua aspirasi
+            $aspirasiTerbaru = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+        } else {
+            $aspirasiTerbaru = collect();
         }
-        
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('lokasi', 'like', '%' . $request->search . '%')
-                  ->orWhere('keterangan', 'like', '%' . $request->search . '%');
-            });
+
+        // Statistik per bulan (6 bulan terakhir)
+        $bulanLabels = [];
+        $bulanData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $bulan = now()->subMonths($i);
+            $bulanLabels[] = $bulan->format('M Y');
+            $bulanData[] = Aspirasi::whereYear('created_at', $bulan->year)
+                ->whereMonth('created_at', $bulan->month)
+                ->count();
         }
-        
-        $aspirasi = $query->orderBy('updated_at', 'desc')->paginate(10);
-        $kategoris = \App\Models\Kategori::all();
-        
-        return view('guru.aspirasi.history', compact('aspirasi', 'kategoris'));
+
+        return view('guru.dashboard', compact('guru', 'statistik', 'aspirasiTerbaru', 'bulanLabels', 'bulanData'));
     }
-    
+
+    // DATA ASPIRASI - Menampilkan semua aspirasi (index)
+    // DATA ASPIRASI - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
+    public function index()
+    {
+        $guru = $this->getGuru();
+
+        if ($guru->canCreateAspirasi()) {
+            // GURU: hanya lihat aspirasi yang dia buat sendiri (belum selesai)
+            $aspirasi = Aspirasi::with(['kategori', 'ruangan'])
+                ->where('user_id', Auth::id())
+                ->where('status', '!=', 'Selesai') // Hanya yang belum selesai
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        } elseif ($guru->canViewAllAspirasi()) {
+            // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi (belum selesai)
+            $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
+                ->where('status', '!=', 'Selesai') // Hanya yang belum selesai
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        } else {
+            $aspirasi = collect();
+        }
+
+        $statistik = [
+            'total' => Aspirasi::count(),
+            'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
+            'proses' => Aspirasi::where('status', 'Proses')->count(),
+            'selesai' => Aspirasi::where('status', 'Selesai')->count(),
+        ];
+
+        $kategoris = Kategori::all();
+
+        return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris'));
+    }
+
+    // Form buat aspirasi (khusus Guru)
+    public function create()
+    {
+        $guru = $this->getGuru();
+
+        if (!$guru->canCreateAspirasi()) {
+            abort(403, 'Hanya Guru yang dapat membuat aspirasi');
+        }
+
+        $kategoris = Kategori::all();
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
+
+        return view('guru.aspirasi.create', compact('guru', 'kategoris', 'ruangans'));
+    }
+
+    // Store aspirasi (khusus Guru)
+    public function store(Request $request)
+    {
+        $guru = $this->getGuru();
+
+        if (!$guru->canCreateAspirasi()) {
+            return redirect()->back()->with('error', 'Hanya Guru yang dapat membuat aspirasi');
+        }
+
+        $request->validate([
+            'id_kategori' => 'required|exists:kategori,id_kategori',
+            'id_ruangan' => 'required|exists:ruangan,id_ruangan',
+            'keterangan' => 'required|string',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $ruangan = Ruangan::find($request->id_ruangan);
+        $lokasi = $ruangan->nama_ruangan . ' (' . $ruangan->kode_ruangan . ')';
+
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('aspirasi_foto', 'public');
+        }
+
+        Aspirasi::create([
+            'user_id' => Auth::id(),
+            'id_kategori' => $request->id_kategori,
+            'id_ruangan' => $request->id_ruangan,
+            'lokasi' => $lokasi,
+            'keterangan' => $request->keterangan,
+            'foto' => $fotoPath,
+            'status' => 'Menunggu'
+        ]);
+
+        return redirect()->route('guru.aspirasi.index')
+            ->with('success', 'Aspirasi berhasil dikirim');
+    }
+
     // Detail aspirasi
     public function detail($id)
     {
-        $aspirasi = Aspirasi::with(['user.siswa', 'kategori', 'progres.user', 'historyStatus.user'])
-            ->findOrFail($id);
-            
-        return view('guru.aspirasi.detail', compact('aspirasi'));
-    }
-    
-    // Update status menjadi Proses (hanya dari update progres)
-    public function updateStatusToProses($id)
-    {
-        $aspirasi = Aspirasi::findOrFail($id);
-        
-        if ($aspirasi->status == 'Menunggu') {
-            $statusLama = $aspirasi->status;
-            $statusBaru = 'Proses';
-            
-            HistoryStatus::create([
-                'id_aspirasi' => $id,
-                'status_lama' => $statusLama,
-                'status_baru' => $statusBaru,
-                'diubah_oleh' => auth()->id(),
-            ]);
-            
-            $aspirasi->update(['status' => $statusBaru]);
-            
-            return true;
+        $guru = $this->getGuru();
+
+        if ($guru->canCreateAspirasi()) {
+            // GURU: hanya bisa lihat aspirasi miliknya sendiri
+            $aspirasi = Aspirasi::with(['kategori', 'ruangan', 'progres.user', 'historyStatus.pengubah'])
+                ->where('user_id', Auth::id())
+                ->findOrFail($id);
+        } elseif ($guru->canViewAllAspirasi()) {
+            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN, WALI KELAS: bisa lihat semua
+            $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres.user', 'historyStatus.pengubah'])
+                ->findOrFail($id);
+        } else {
+            abort(403, 'Anda tidak memiliki akses');
         }
-        
-        return false;
+
+        $kategoris = Kategori::all();
+
+        return view('guru.aspirasi.detail', compact('guru', 'aspirasi', 'kategoris'));
     }
-    
-    // Update status menjadi Selesai
-    public function updateStatusToSelesai($id)
-    {
-        $aspirasi = Aspirasi::findOrFail($id);
-        
-        if ($aspirasi->status != 'Selesai') {
-            $statusLama = $aspirasi->status;
-            $statusBaru = 'Selesai';
-            
-            HistoryStatus::create([
-                'id_aspirasi' => $id,
-                'status_lama' => $statusLama,
-                'status_baru' => $statusBaru,
-                'diubah_oleh' => auth()->id(),
-            ]);
-            
-            $aspirasi->update(['status' => $statusBaru]);
-            
-            return redirect()->route('guru.aspirasi.index')
-                ->with('success', 'Aspirasi telah selesai dan dipindahkan ke history');
-        }
-        
-        return redirect()->back()->with('error', 'Gagal mengupdate status');
-    }
-    
-    // Tambah progres (akan mengubah status ke Proses jika masih Menunggu)
-    public function storeProgres(Request $request, $id)
-    {
-        $request->validate([
-            'keterangan_progres' => 'required|string'
-        ]);
-        
-        // Update status ke Proses jika masih Menunggu
-        $this->updateStatusToProses($id);
-        
-        // Simpan progres
-        Progres::create([
-            'id_aspirasi' => $id,
-            'user_id' => auth()->id(),
-            'keterangan_progres' => $request->keterangan_progres,
-        ]);
-        
-        return redirect()->back()->with('success', 'Progres berhasil ditambahkan dan status berubah menjadi Proses');
-    }
-    
-    // Tambah feedback (TIDAK mengubah status)
+
+    // Store Feedback (Hanya untuk Wali Kelas)
     public function storeFeedback(Request $request, $id)
     {
+        $guru = $this->getGuru();
+
+        if (!$guru->canManageAspirasi()) {
+            return redirect()->back()->with('error', 'Hanya Wali Kelas yang dapat memberi feedback');
+        }
+
         $request->validate([
             'feedback' => 'required|string'
         ]);
-        
-        // Simpan feedback tanpa mengubah status
+
         Progres::create([
             'id_aspirasi' => $id,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'keterangan_progres' => 'Feedback: ' . $request->feedback,
         ]);
-        
+
         return redirect()->back()->with('success', 'Feedback berhasil ditambahkan');
     }
-    
-    // Hapus aspirasi
-    public function destroy($id)
+
+    // Store Progres (Hanya untuk Wali Kelas)
+    public function storeProgres(Request $request, $id)
     {
-        try {
-            $aspirasi = Aspirasi::findOrFail($id);
-            
-            // Hapus foto jika ada
-            if ($aspirasi->foto && Storage::disk('public')->exists($aspirasi->foto)) {
-                Storage::disk('public')->delete($aspirasi->foto);
-            }
-            
-            // Hapus progres terkait
-            Progres::where('id_aspirasi', $id)->delete();
-            
-            // Hapus history status terkait
-            HistoryStatus::where('id_aspirasi', $id)->delete();
-            
-            // Hapus aspirasi
-            $aspirasi->delete();
-            
-            return redirect()->back()->with('success', 'Aspirasi berhasil dihapus');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus aspirasi: ' . $e->getMessage());
+        $guru = $this->getGuru();
+
+        if (!$guru->canManageAspirasi()) {
+            return redirect()->back()->with('error', 'Hanya Wali Kelas yang dapat update progres');
         }
+
+        $request->validate([
+            'keterangan_progres' => 'required|string'
+        ]);
+
+        Progres::create([
+            'id_aspirasi' => $id,
+            'user_id' => Auth::id(),
+            'keterangan_progres' => $request->keterangan_progres,
+        ]);
+
+        return redirect()->back()->with('success', 'Progres berhasil ditambahkan');
+    }
+
+    // Update Status (Hanya untuk Wali Kelas)
+    public function updateStatus(Request $request, $id)
+    {
+        $guru = $this->getGuru();
+
+        if (!$guru->canChangeStatus()) {
+            return redirect()->back()->with('error', 'Hanya Wali Kelas yang dapat mengubah status');
+        }
+
+        $request->validate([
+            'status' => 'required|in:Menunggu,Proses,Selesai',
+            'keterangan_progres' => 'nullable|string'
+        ]);
+
+        $aspirasi = Aspirasi::findOrFail($id);
+        $statusLama = $aspirasi->status;
+        $statusBaru = $request->status;
+
+        // Simpan history status
+        HistoryStatus::create([
+            'id_aspirasi' => $id,
+            'status_lama' => $statusLama,
+            'status_baru' => $statusBaru,
+            'diubah_oleh' => Auth::id(),
+        ]);
+
+        // Update status
+        $aspirasi->update(['status' => $statusBaru]);
+
+        // Simpan progres jika ada keterangan
+        if ($request->filled('keterangan_progres')) {
+            Progres::create([
+                'id_aspirasi' => $id,
+                'user_id' => Auth::id(),
+                'keterangan_progres' => $request->keterangan_progres,
+            ]);
+        }
+
+        // Jika status menjadi Selesai, tambahkan progres otomatis
+        if ($statusBaru == 'Selesai') {
+            Progres::create([
+                'id_aspirasi' => $id,
+                'user_id' => Auth::id(),
+                'keterangan_progres' => 'Aspirasi telah selesai ditangani oleh Wali Kelas ' . $guru->nama,
+            ]);
+        }
+
+        $message = $statusBaru == 'Selesai'
+            ? 'Aspirasi telah selesai dan masuk ke history'
+            : 'Status berhasil diupdate';
+
+        return redirect()->back()->with('success', $message);
+    }
+    // History
+    public function history(Request $request)
+    {
+        $guru = $this->getGuru();
+
+        if ($guru->canCreateAspirasi()) {
+            // GURU: hanya melihat history aspirasi yang dia buat sendiri (yang sudah selesai)
+            $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
+                ->where('status_baru', 'Selesai') // Hanya yang statusnya menjadi Selesai
+                ->whereHas('aspirasi', function ($q) {
+                    $q->where('user_id', Auth::id());
+                });
+        } else {
+            // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: melihat semua history yang selesai
+            $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
+                ->where('status_baru', 'Selesai'); // Hanya yang statusnya menjadi Selesai
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $history = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return view('guru.history', compact('guru', 'history'));
+    }
+    // Statistik (Untuk Kepala Sekolah, Wakil, Kepala Jurusan)
+    public function statistik()
+    {
+        $guru = $this->getGuru();
+
+        if (!$guru->canViewStatistik()) {
+            return redirect()->route('guru.aspirasi.index')->with('error', 'Anda tidak memiliki akses ke halaman statistik');
+        }
+
+        $bulanLabels = [];
+        $bulanData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $bulan = now()->subMonths($i);
+            $bulanLabels[] = $bulan->format('M Y');
+            $bulanData[] = Aspirasi::whereYear('created_at', $bulan->year)
+                ->whereMonth('created_at', $bulan->month)
+                ->count();
+        }
+
+        $kategoriStat = Kategori::withCount('aspirasi')->get();
+        $ruanganStat = Ruangan::withCount('aspirasi')->get();
+        $statusStat = [
+            'Menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
+            'Proses' => Aspirasi::where('status', 'Proses')->count(),
+            'Selesai' => Aspirasi::where('status', 'Selesai')->count(),
+        ];
+
+        return view('guru.statistik', compact('guru', 'bulanLabels', 'bulanData', 'kategoriStat', 'ruanganStat', 'statusStat'));
     }
 }

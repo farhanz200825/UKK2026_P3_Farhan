@@ -115,7 +115,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('aspirasiChart').getContext('2d');
@@ -143,4 +143,4 @@
         }
     });
 </script>
-@endsection
+@endpush

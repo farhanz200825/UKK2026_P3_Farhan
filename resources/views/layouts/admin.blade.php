@@ -22,34 +22,40 @@
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}" id="main-style-link" />
     <link rel="stylesheet" href="{{ asset('assets/css/style-preset.css') }}" />
+
+    <style>
+        .user-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4680ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .pc-sidebar .user-info {
+            transition: all 0.3s;
+        }
+
+        .pc-sidebar .user-info:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-petugas {
+            background: #7b1fa2;
+            color: white;
+        }
+    </style>
 </head>
-<style>
-    .user-info {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        margin: 10px;
-    }
-
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #4680ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-    }
-
-    .pc-sidebar .user-info {
-        transition: all 0.3s;
-    }
-
-    .pc-sidebar .user-info:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-</style>
 
 <body data-pc-preset="preset-1" data-pc-sidebar-caption="true" data-pc-direction="ltr" data-pc-theme="light">
     <!-- [ Pre-loader ] start -->
@@ -89,6 +95,8 @@
                             $fotoUrl = asset('storage/' . $user->siswa->foto);
                             } elseif($user->role == 'guru' && $user->guru && $user->guru->foto) {
                             $fotoUrl = asset('storage/' . $user->guru->foto);
+                            } elseif($user->role == 'petugas' && $user->petugas && $user->petugas->foto) {
+                            $fotoUrl = asset('storage/' . $user->petugas->foto);
                             }
                             @endphp
 
@@ -109,6 +117,8 @@
                                 {{ $user->siswa->nama ?? $user->email }}
                                 @elseif($user->role == 'guru' && $user->guru)
                                 {{ $user->guru->nama ?? $user->email }}
+                                @elseif($user->role == 'petugas' && $user->petugas)
+                                {{ $user->petugas->nama ?? $user->email }}
                                 @else
                                 {{ $user->email }}
                                 @endif
@@ -118,6 +128,8 @@
                                 <span class="badge bg-primary">Administrator</span>
                                 @elseif($user->role == 'guru')
                                 <span class="badge bg-success">Guru</span>
+                                @elseif($user->role == 'petugas')
+                                <span class="badge bg-purple">Petugas</span>
                                 @else
                                 <span class="badge bg-info">Siswa</span>
                                 @endif
@@ -136,9 +148,7 @@
 
                     <li class="pc-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <a href="{{ route('admin.dashboard') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-house-line"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-house-line"></i></span>
                             <span class="pc-mtext">Dashboard Admin</span>
                         </a>
                     </li>
@@ -149,44 +159,114 @@
 
                     <li class="pc-item {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
                         <a href="{{ route('admin.users') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-users"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-users"></i></span>
                             <span class="pc-mtext">Manajemen Pengguna</span>
                         </a>
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('admin.kategori*') ? 'active' : '' }}">
                         <a href="{{ route('admin.kategori') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-tag"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-tag"></i></span>
                             <span class="pc-mtext">Master Data</span>
                         </a>
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('admin.pengaduan*') ? 'active' : '' }}">
                         <a href="{{ route('admin.pengaduan') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-warning-octagon"></i>
-                            </span>
-                            <span class="pc-mtext">Data Pengaduan</span>
+                            <span class="pc-micon"><i class="ph ph-warning-octagon"></i></span>
+                            <span class="pc-mtext">Data Aspirasi</span>
+                        </a>
+                    </li>
+
+                    <li class="pc-item pc-caption">
+                        <label>Lainnya</label>
+                    </li>
+
+                    <li class="pc-item {{ request()->routeIs('admin.history') ? 'active' : '' }}">
+                        <a href="{{ route('admin.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">History</span>
                         </a>
                     </li>
                     @endif
 
                     <!-- ==================== MENU UNTUK GURU ==================== -->
                     @if(Auth::user()->role == 'guru')
+                    @php $guru = Auth::user()->guru; @endphp
+
                     <li class="pc-item pc-caption">
                         <label>Navigasi Utama</label>
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('guru.dashboard') ? 'active' : '' }}">
                         <a href="{{ route('guru.dashboard') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-house-line"></i>
+                            <span class="pc-micon"><i class="ph ph-house-line"></i></span>
+                            <span class="pc-mtext">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Menu untuk GURU (bisa membuat aspirasi) -->
+                    @if($guru->canCreateAspirasi())
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.create') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.create') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-pencil-line"></i></span>
+                            <span class="pc-mtext">Buat Aspirasi</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu Data Aspirasi untuk semua yang bisa melihat -->
+                    @if($guru->canViewAllAspirasi() || $guru->canCreateAspirasi())
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-list"></i></span>
+                            <span class="pc-mtext">
+                                @if($guru->canCreateAspirasi())
+                                Daftar Aspirasi Saya
+                                @else
+                                Data Aspirasi
+                                @endif
                             </span>
-                            <span class="pc-mtext">Dashboard Guru</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu untuk KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN (statistik) -->
+                    @if($guru->canViewStatistik())
+                    <li class="pc-item {{ request()->routeIs('guru.statistik') ? 'active' : '' }}">
+                        <a href="{{ route('guru.statistik') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-chart-line"></i></span>
+                            <span class="pc-mtext">Statistik</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Menu HISTORY -->
+                    <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
+                        <a href="{{ route('guru.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">
+                                @if($guru->canCreateAspirasi())
+                                History Saya
+                                @else
+                                History Aspirasi
+                                @endif
+                            </span>
+                        </a>
+                    </li>
+
+                    @endif
+
+                    <!-- ==================== MENU UNTUK PETUGAS ==================== -->
+                    @if(Auth::user()->role == 'petugas')
+                    <li class="pc-item pc-caption">
+                        <label>Navigasi Utama</label>
+                    </li>
+
+                    <li class="pc-item {{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('petugas.dashboard') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-house-line"></i></span>
+                            <span class="pc-mtext">Dashboard Petugas</span>
                         </a>
                     </li>
 
@@ -194,20 +274,16 @@
                         <label>Kelola Aspirasi</label>
                     </li>
 
-                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
-                        <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-chat-circle-text"></i>
-                            </span>
+                    <li class="pc-item {{ request()->routeIs('petugas.aspirasi.index') ? 'active' : '' }}">
+                        <a href="{{ route('petugas.aspirasi.index') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-chat-circle-text"></i></span>
                             <span class="pc-mtext">Data Aspirasi</span>
                         </a>
                     </li>
 
-                    <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
-                        <a href="{{ route('guru.history') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-clock-counter-clockwise"></i>
-                            </span>
+                    <li class="pc-item {{ request()->routeIs('petugas.history') ? 'active' : '' }}">
+                        <a href="{{ route('petugas.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
                             <span class="pc-mtext">History Aspirasi</span>
                         </a>
                     </li>
@@ -221,9 +297,7 @@
 
                     <li class="pc-item {{ request()->routeIs('siswa.dashboard') ? 'active' : '' }}">
                         <a href="{{ route('siswa.dashboard') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-house-line"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-house-line"></i></span>
                             <span class="pc-mtext">Dashboard Siswa</span>
                         </a>
                     </li>
@@ -234,37 +308,29 @@
 
                     <li class="pc-item {{ request()->routeIs('siswa.aspirasi.create') ? 'active' : '' }}">
                         <a href="{{ route('siswa.aspirasi.create') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-pencil-line"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-pencil-line"></i></span>
                             <span class="pc-mtext">Buat Aspirasi</span>
+                        </a>
+                    </li>
+
+                    <li class="pc-item {{ request()->routeIs('siswa.aspirasi.index') ? 'active' : '' }}">
+                        <a href="{{ route('siswa.aspirasi.index') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-list"></i></span>
+                            <span class="pc-mtext">Daftar Aspirasi</span>
                         </a>
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('siswa.aspirasi.status') ? 'active' : '' }}">
                         <a href="{{ route('siswa.aspirasi.status') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-chart-line"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-chart-line"></i></span>
                             <span class="pc-mtext">Status Aspirasi</span>
                         </a>
                     </li>
 
                     <li class="pc-item {{ request()->routeIs('siswa.aspirasi.history') ? 'active' : '' }}">
                         <a href="{{ route('siswa.aspirasi.history') }}" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-clock-counter-clockwise"></i>
-                            </span>
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
                             <span class="pc-mtext">History Aspirasi</span>
-                        </a>
-                    </li>
-
-                    <li class="pc-item {{ request()->routeIs('') ? 'active' : '' }}">
-                        <a href="" class="pc-link">
-                            <span class="pc-micon">
-                                <i class="ph ph-chat-dots"></i>
-                            </span>
-                            <span class="pc-mtext">Feedback</span>
                         </a>
                     </li>
                     @endif
@@ -275,9 +341,8 @@
     <!-- [ Sidebar Menu ] end -->
 
     <!-- [ Header Topbar ] start -->
-    <!-- [ Header Topbar ] start -->
     <header class="pc-header">
-        <div class="header-wrapper"> <!-- [Mobile Media Block] start -->
+        <div class="header-wrapper">
             <div class="me-auto pc-mob-drp">
                 <ul class="list-unstyled">
                     <li class="pc-h-item pc-sidebar-collapse">
@@ -291,13 +356,8 @@
                         </a>
                     </li>
                     <li class="dropdown pc-h-item">
-                        <a
-                            class="pc-head-link dropdown-toggle arrow-none m-0 trig-drp-search"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            role="button"
-                            aria-haspopup="false"
-                            aria-expanded="false">
+                        <a class="pc-head-link dropdown-toggle arrow-none m-0 trig-drp-search"
+                            data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                             <i class="ph ph-magnifying-glass"></i>
                         </a>
                         <div class="dropdown-menu pc-h-dropdown drp-search">
@@ -308,42 +368,26 @@
                     </li>
                 </ul>
             </div>
-            <!-- [Mobile Media Block end] -->
             <div class="ms-auto">
                 <ul class="list-unstyled">
                     <li class="dropdown pc-h-item">
-                        <a
-                            class="pc-head-link dropdown-toggle arrow-none me-0"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            role="button"
-                            aria-haspopup="false"
-                            aria-expanded="false">
+                        <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                             <i class="ph ph-sun-dim"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end pc-h-dropdown">
                             <a href="#!" class="dropdown-item" onclick="layout_change('dark')">
-                                <i class="ph ph-moon"></i>
-                                <span>Dark</span>
+                                <i class="ph ph-moon"></i> <span>Dark</span>
                             </a>
                             <a href="#!" class="dropdown-item" onclick="layout_change('light')">
-                                <i class="ph ph-sun"></i>
-                                <span>Light</span>
+                                <i class="ph ph-sun"></i> <span>Light</span>
                             </a>
                             <a href="#!" class="dropdown-item" onclick="layout_change_default()">
-                                <i class="ph ph-cpu"></i>
-                                <span>Default</span>
+                                <i class="ph ph-cpu"></i> <span>Default</span>
                             </a>
                         </div>
                     </li>
                     <li class="dropdown pc-h-item">
-                        <a
-                            class="pc-head-link dropdown-toggle arrow-none me-0"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            role="button"
-                            aria-haspopup="false"
-                            aria-expanded="false">
+                        <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                             <i class="ph ph-diamonds-four"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end pc-h-dropdown">
@@ -354,7 +398,6 @@
                                 <i class="ph ph-gear"></i> Settings
                             </a>
                             <div class="dropdown-divider"></div>
-                            <!-- Logout dengan form -->
                             <form action="{{ route('logout') }}" method="POST" id="logout-form-header">
                                 @csrf
                                 <button type="submit" class="dropdown-item text-danger" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
@@ -375,10 +418,8 @@
                             $notifikasiList = [];
 
                             if($user->role == 'admin') {
-                            // Admin: aspirasi baru (Menunggu)
                             $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
                             $notifikasiCount += $aspirasiBaru;
-
                             foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
                             $notifikasiList[] = [
                             'type' => 'new',
@@ -389,10 +430,8 @@
                             ];
                             }
                             } elseif($user->role == 'guru') {
-                            // Guru: aspirasi baru (Menunggu)
                             $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
                             $notifikasiCount += $aspirasiBaru;
-
                             foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
                             $notifikasiList[] = [
                             'type' => 'new',
@@ -402,13 +441,23 @@
                             'link' => route('guru.aspirasi.detail', $asp->id_aspirasi)
                             ];
                             }
+                            } elseif($user->role == 'petugas') {
+                            $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
+                            $notifikasiCount += $aspirasiBaru;
+                            foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
+                            $notifikasiList[] = [
+                            'type' => 'new',
+                            'title' => 'Aspirasi Baru',
+                            'message' => 'Dari: ' . ($asp->user->siswa->nama ?? $asp->user->email),
+                            'time' => $asp->created_at->diffForHumans(),
+                            'link' => route('petugas.aspirasi.detail', $asp->id_aspirasi)
+                            ];
+                            }
                             } elseif($user->role == 'siswa') {
-                            // Siswa: progres/feedback baru
                             $progresBaru = Progres::whereHas('aspirasi', function($q) use ($user) {
                             $q->where('user_id', $user->id);
                             })->where('created_at', '>=', now()->subDays(7))->count();
                             $notifikasiCount += $progresBaru;
-
                             $aspirasiIds = Aspirasi::where('user_id', $user->id)->pluck('id_aspirasi');
                             foreach(Progres::with('user')->whereIn('id_aspirasi', $aspirasiIds)->latest()->take(5)->get() as $prog) {
                             $isFeedback = str_contains($prog->keterangan_progres, 'Feedback:');
@@ -439,11 +488,7 @@
                                         <div class="card-body p-3 rounded" style="background: rgba(var(--bs-light-rgb), 0.3); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--bs-primary-rgb), 0.05)'" onmouseout="this.style.background='rgba(var(--bs-light-rgb), 0.3)'">
                                             <div class="d-flex">
                                                 <div class="flex-shrink-0">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                                        style="width: 40px; height: 40px;
-                                             @if($notif['type'] == 'new') background: rgba(255, 193, 7, 0.1); @endif
-                                             @if($notif['type'] == 'feedback') background: rgba(13, 110, 253, 0.1); @endif
-                                             @if($notif['type'] == 'progress') background: rgba(25, 135, 84, 0.1); @endif">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(13, 110, 253, 0.1);">
                                                         @if($notif['type'] == 'new')
                                                         <i class="ph ph-warning-octagon text-warning" style="font-size: 20px;"></i>
                                                         @elseif($notif['type'] == 'feedback')
@@ -465,12 +510,6 @@
                                     </div>
                                 </a>
                                 @endforeach
-
-                                @if($notifikasiCount > 5)
-                                <div class="text-center py-2">
-                                    <a href="#" class="text-primary small">Lihat semua notifikasi</a>
-                                </div>
-                                @endif
                                 @else
                                 <div class="text-center py-4">
                                     <i class="ph ph-bell-slash" style="font-size: 48px; color: #ccc;"></i>
@@ -478,11 +517,6 @@
                                 </div>
                                 @endif
                             </div>
-                            @if(count($notifikasiList) > 0)
-                            <div class="text-center py-2 border-top">
-                                <a href="#" class="link-danger small" id="clearAllNotifications">Bersihkan semua</a>
-                            </div>
-                            @endif
                         </div>
                     </li>
                 </ul>
@@ -514,6 +548,7 @@
         </div>
     </div>
     <!-- [ Main Content ] end -->
+
     <script>
         // Notifikasi real-time (refresh setiap 30 detik)
         function checkNewNotifications() {
@@ -536,26 +571,17 @@
                 .catch(error => console.log('Error checking notifications:', error));
         }
 
-        // Cek notifikasi setiap 30 detik
         setInterval(checkNewNotifications, 30000);
 
-        // Mark all read
         document.getElementById('markAllRead')?.addEventListener('click', function(e) {
             e.preventDefault();
-            // Simpan ke localStorage bahwa notifikasi sudah dibaca
             localStorage.setItem('notifications_read', Date.now());
             const badge = document.querySelector('.pc-h-badge');
             if (badge) badge.innerText = '';
             location.reload();
         });
-
-        // Clear all notifications
-        document.getElementById('clearAllNotifications')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('notifications_read');
-            location.reload();
-        });
     </script>
+
     <!-- Required JS -->
     <script src="{{ asset('assets/js/plugins/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/simplebar.min.js') }}"></script>

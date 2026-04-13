@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Aspirasi extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'aspirasi';
     protected $primaryKey = 'id_aspirasi';
-    
+
     protected $fillable = [
         'user_id',
         'id_kategori',
@@ -21,34 +21,67 @@ class Aspirasi extends Model
         'status',
         'id_ruangan'
     ];
-    
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    
+
     public function siswa()
     {
-        return $this->belongsTo(Siswa::class, 'user_id', 'user_id');
+        return $this->hasOneThrough(Siswa::class, User::class, 'id', 'user_id', 'user_id', 'id');
     }
-    
+
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'id_kategori');
     }
-    
+
     public function ruangan()
     {
         return $this->belongsTo(Ruangan::class, 'id_ruangan');
     }
-    
+
     public function progres()
     {
         return $this->hasMany(Progres::class, 'id_aspirasi');
     }
-    
+
     public function historyStatus()
     {
         return $this->hasMany(HistoryStatus::class, 'id_aspirasi');
+    }
+
+    // Helper untuk mendapatkan nama pengirim
+    public function getNamaPengirimAttribute()
+    {
+        if ($this->user) {
+            if ($this->user->role == 'siswa' && $this->user->siswa) {
+                return $this->user->siswa->nama;
+            } elseif ($this->user->role == 'guru' && $this->user->guru) {
+                return $this->user->guru->nama;
+            } elseif ($this->user->role == 'petugas' && $this->user->petugas) {
+                return $this->user->petugas->nama;
+            }
+            return $this->user->email;
+        }
+        return 'Pengguna tidak diketahui';
+    }
+    // Scope untuk aspirasi yang sudah selesai
+    public function scopeSelesai($query)
+    {
+        return $query->where('status', 'Selesai');
+    }
+
+    // Scope untuk aspirasi yang belum selesai
+    public function scopeBelumSelesai($query)
+    {
+        return $query->where('status', '!=', 'Selesai');
+    }
+
+    // Accessor untuk mengetahui apakah aspirasi bisa di-feedback
+    public function getCanFeedbackAttribute()
+    {
+        return in_array($this->status, ['Menunggu', 'Proses']);
     }
 }

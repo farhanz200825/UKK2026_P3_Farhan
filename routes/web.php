@@ -2,9 +2,9 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\PengaduanController;
 use App\Http\Controllers\Guru\AspirasiController as GuruAspirasiController;
 use App\Http\Controllers\Siswa\AspirasiController as SiswaAspirasiController;
+use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
@@ -32,10 +32,7 @@ Route::get('/dashboard', function() {
 
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // User Management (Halaman utama users dengan semua tab)
     Route::get('/users', [DashboardController::class, 'users'])->name('users');
     
     // CRUD Admin
@@ -53,12 +50,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/siswa/{id}', [DashboardController::class, 'updateSiswa'])->name('siswa.update');
     Route::delete('/siswa/{id}', [DashboardController::class, 'destroySiswa'])->name('siswa.destroy');
     
+    // IMPORT SISWA
+    Route::post('/siswa/import', [DashboardController::class, 'importSiswa'])->name('siswa.import');
+    Route::get('/siswa/template', [DashboardController::class, 'downloadTemplateSiswa'])->name('siswa.template');
+    
     // CRUD Petugas
     Route::post('/petugas/store', [DashboardController::class, 'storePetugas'])->name('petugas.store');
     Route::put('/petugas/{id}', [DashboardController::class, 'updatePetugas'])->name('petugas.update');
     Route::delete('/petugas/{id}', [DashboardController::class, 'destroyPetugas'])->name('petugas.destroy');
     
-    // Master Data (Kategori, Jurusan, Kelas, Ruangan)
+    // Master Data
     Route::get('/kategori', [DashboardController::class, 'kategori'])->name('kategori');
     Route::post('/kategori', [DashboardController::class, 'storeKategori'])->name('kategori.store');
     Route::put('/kategori/{id}', [DashboardController::class, 'updateKategori'])->name('kategori.update');
@@ -87,42 +88,37 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/pengaduan/{id}/progres', [DashboardController::class, 'storeProgres'])->name('pengaduan.progres');
     Route::delete('/pengaduan/{id}', [DashboardController::class, 'destroyAspirasi'])->name('pengaduan.destroy');
     
+    // History
+    Route::get('/history', [DashboardController::class, 'history'])->name('history');
+    
     // Sarana
     Route::get('/sarana', function () { return view('admin.sarana.index'); })->name('sarana');
 });
 
 // ==================== GURU ROUTES ====================
 Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(function () {
-    Route::get('/dashboard', [GuruDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [GuruAspirasiController::class, 'dashboard'])->name('dashboard');
     Route::get('/aspirasi', [GuruAspirasiController::class, 'index'])->name('aspirasi.index');
+    Route::get('/aspirasi/create', [GuruAspirasiController::class, 'create'])->name('aspirasi.create');
+    Route::post('/aspirasi', [GuruAspirasiController::class, 'store'])->name('aspirasi.store');
     Route::get('/aspirasi/{id}', [GuruAspirasiController::class, 'detail'])->name('aspirasi.detail');
     Route::post('/aspirasi/{id}/feedback', [GuruAspirasiController::class, 'storeFeedback'])->name('aspirasi.feedback');
     Route::post('/aspirasi/{id}/progres', [GuruAspirasiController::class, 'storeProgres'])->name('aspirasi.progres');
     Route::put('/aspirasi/{id}/status', [GuruAspirasiController::class, 'updateStatus'])->name('aspirasi.status');
     Route::get('/history', [GuruAspirasiController::class, 'history'])->name('history');
+    Route::get('/statistik', [GuruAspirasiController::class, 'statistik'])->name('statistik');
 });
 
 // ==================== SISWA ROUTES ====================
 Route::middleware(['auth', 'role:siswa'])->prefix('siswa')->name('siswa.')->group(function () {
-    // Dashboard
     Route::get('/dashboard', [SiswaDashboardController::class, 'index'])->name('dashboard');
-    
-    // Aspirasi Management (Create)
     Route::get('/aspirasi/create', [SiswaAspirasiController::class, 'create'])->name('aspirasi.create');
     Route::post('/aspirasi', [SiswaAspirasiController::class, 'store'])->name('aspirasi.store');
-    
-    // Aspirasi View & Tracking
     Route::get('/aspirasi', [SiswaAspirasiController::class, 'index'])->name('aspirasi.index');
     Route::get('/aspirasi/{id}', [SiswaAspirasiController::class, 'detail'])->name('aspirasi.detail');
-    
-    // Aspirasi Status & History (untuk tracking siswa)
-    Route::get('/aspirasi/status', [SiswaAspirasiController::class, 'status'])->name('aspirasi.status');
-    Route::get('/aspirasi/history', [SiswaAspirasiController::class, 'history'])->name('aspirasi.history');
-    
-    // Feedback dari siswa (jika siswa bisa memberi feedback ke petugas/guru)
+    Route::get('/status', [SiswaAspirasiController::class, 'status'])->name('aspirasi.status');
+    Route::get('/history', [SiswaAspirasiController::class, 'history'])->name('aspirasi.history');
     Route::post('/aspirasi/{id}/feedback', [SiswaAspirasiController::class, 'storeFeedback'])->name('aspirasi.feedback');
-    
-    // Profile
     Route::get('/profile', [SiswaAspirasiController::class, 'profile'])->name('profile');
 });
 
@@ -136,18 +132,12 @@ Route::middleware(['auth'])->prefix('profile')->name('profile.')->group(function
 
 // ==================== PETUGAS ROUTES ====================
 Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->name('petugas.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\Petugas\DashboardController::class, 'index'])->name('dashboard');
-    
-    // Aspirasi Management
-    Route::get('/aspirasi', [App\Http\Controllers\Petugas\DashboardController::class, 'aspirasiIndex'])->name('aspirasi.index');
-    Route::get('/aspirasi/{id}', [App\Http\Controllers\Petugas\DashboardController::class, 'aspirasiDetail'])->name('aspirasi.detail');
-    Route::post('/aspirasi/{id}/status', [App\Http\Controllers\Petugas\DashboardController::class, 'updateStatus'])->name('aspirasi.status');
-    Route::post('/aspirasi/{id}/feedback', [App\Http\Controllers\Petugas\DashboardController::class, 'storeFeedback'])->name('aspirasi.feedback');
-    Route::post('/aspirasi/{id}/progres', [App\Http\Controllers\Petugas\DashboardController::class, 'storeProgres'])->name('aspirasi.progres');
-    
-    // History
-    Route::get('/history', [App\Http\Controllers\Petugas\DashboardController::class, 'history'])->name('history');
-    
-    // Profile
-    Route::get('/profile', [App\Http\Controllers\Petugas\DashboardController::class, 'profile'])->name('profile');
+    Route::get('/dashboard', [PetugasDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/aspirasi', [PetugasDashboardController::class, 'aspirasiIndex'])->name('aspirasi.index');
+    Route::get('/aspirasi/{id}', [PetugasDashboardController::class, 'aspirasiDetail'])->name('aspirasi.detail');
+    Route::post('/aspirasi/{id}/status', [PetugasDashboardController::class, 'updateStatus'])->name('aspirasi.status');
+    Route::post('/aspirasi/{id}/feedback', [PetugasDashboardController::class, 'storeFeedback'])->name('aspirasi.feedback');
+    Route::post('/aspirasi/{id}/progres', [PetugasDashboardController::class, 'storeProgres'])->name('aspirasi.progres');
+    Route::get('/history', [PetugasDashboardController::class, 'history'])->name('history');
+    Route::get('/profile', [PetugasDashboardController::class, 'profile'])->name('profile');
 });

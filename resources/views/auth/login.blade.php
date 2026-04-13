@@ -52,12 +52,22 @@
         .role-badge.admin { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
         .role-badge.guru { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .role-badge.siswa { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+        .role-badge.petugas { background: #f3e5f5; color: #7b1fa2; border: 1px solid #ce93d8; }
         .role-badge i { font-size: 1rem; }
         .info-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 10px;
             padding: 15px;
             margin-top: 20px;
+        }
+        .login-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        .login-info small {
+            color: #6c757d;
         }
     </style>
 </head>
@@ -79,17 +89,21 @@
                         <p class="text-white">Sistem pelaporan kerusakan sarana dan prasarana sekolah yang cepat, mudah, dan terintegrasi.</p>
 
                         <div class="row mt-5">
-                            <div class="col-4 text-center">
-                                <i class="ti ti-building text-white" style="font-size: 2.5rem;"></i>
+                            <div class="col-3 text-center">
+                                <i class="ti ti-building text-white" style="font-size: 2rem;"></i>
                                 <p class="text-white mt-2 mb-0"><small>Sarana Sekolah</small></p>
                             </div>
-                            <div class="col-4 text-center">
-                                <i class="ti ti-alert-circle text-white" style="font-size: 2.5rem;"></i>
+                            <div class="col-3 text-center">
+                                <i class="ti ti-alert-circle text-white" style="font-size: 2rem;"></i>
                                 <p class="text-white mt-2 mb-0"><small>Laporan Cepat</small></p>
                             </div>
-                            <div class="col-4 text-center">
-                                <i class="ti ti-check text-white" style="font-size: 2.5rem;"></i>
+                            <div class="col-3 text-center">
+                                <i class="ti ti-check text-white" style="font-size: 2rem;"></i>
                                 <p class="text-white mt-2 mb-0"><small>Penanganan</small></p>
+                            </div>
+                            <div class="col-3 text-center">
+                                <i class="ti ti-headphones text-white" style="font-size: 2rem;"></i>
+                                <p class="text-white mt-2 mb-0"><small>24/7 Support</small></p>
                             </div>
                         </div>
                     </div>
@@ -119,8 +133,6 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                         @endif
-
-                       
 
                         <form method="POST" action="{{ route('login') }}">
                             @csrf
@@ -152,7 +164,42 @@
                             </div>
                         </form>
                         
-                        <hr class="my-4">
+                        <div class="login-info">
+                            <small class="text-muted d-block text-center mb-2">
+                                <i class="ph ph-info me-1"></i> Informasi Login:
+                            </small>
+                            <div class="row text-center small">
+                                <div class="col-6">
+                                    <span class="role-badge admin w-100">
+                                        <i class="ph ph-shield-check"></i> Admin: email
+                                    </span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="role-badge guru w-100">
+                                        <i class="ph ph-chalkboard-teacher"></i> Guru: NIP
+                                    </span>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="role-badge siswa w-100">
+                                        <i class="ph ph-users"></i> Siswa: NIS
+                                    </span>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="role-badge petugas w-100">
+                                        <i class="ph ph-user-switch"></i> Petugas: NIP
+                                    </span>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <small class="text-muted d-block text-center">
+                                Demo: <strong>admin@ukk2026.com</strong> / password<br>
+                                Guru: <strong>2317628317862</strong> / password<br>
+                                Siswa: <strong>2324102576</strong> / password<br>
+                                Petugas: <strong>27398273922</strong> / password
+                            </small>
+                        </div>
+                        
+                        <hr class="my-3">
                     </div>
                 </div>
             </div>

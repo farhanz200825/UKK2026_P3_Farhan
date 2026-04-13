@@ -17,6 +17,8 @@ use App\Models\Ruangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Imports\SiswaImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
@@ -28,12 +30,10 @@ class DashboardController extends Controller
         $totalAspirasi = Aspirasi::count();
         $totalAdmin = User::where('role', 'admin')->count();
 
-        // Statistik berdasarkan status
         $aspirasiMenunggu = Aspirasi::where('status', 'Menunggu')->count();
         $aspirasiProses = Aspirasi::where('status', 'Proses')->count();
         $aspirasiSelesai = Aspirasi::where('status', 'Selesai')->count();
 
-        // Aspirasi per bulan (6 bulan terakhir)
         $bulanLabels = [];
         $bulanData = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -57,7 +57,6 @@ class DashboardController extends Controller
         ));
     }
 
-    // Manajemen User (Gabungan Admin, Guru, Siswa, Petugas)
     public function users()
     {
         $admins = User::where('role', 'admin')->get();
@@ -76,15 +75,19 @@ class DashboardController extends Controller
         $request->validate([
             'nis' => 'required|unique:siswa,nis',
             'nama' => 'required',
-            'kelas' => 'required',
-            'jurusan' => 'required',
-            'jenis_kelamin' => 'required',
-            'tanggal_lahir' => 'required|date',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'id_kelas' => 'required|exists:kelas,id_kelas',
+            'id_jurusan' => 'required|exists:jurusan,id_jurusan',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        $kelas = Kelas::find($request->id_kelas);
+        $jurusan = Jurusan::find($request->id_jurusan);
 
         $user = User::create([
             'email' => $request->email,
@@ -92,16 +95,24 @@ class DashboardController extends Controller
             'role' => 'siswa',
         ]);
 
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('foto_siswa', 'public');
+        }
+
         Siswa::create([
             'user_id' => $user->id,
             'nis' => $request->nis,
             'nama' => $request->nama,
-            'kelas' => $request->kelas,
-            'jurusan' => $request->jurusan,
+            'kelas' => $kelas->nama_kelas ?? $request->kelas,
+            'jurusan' => $jurusan->nama_jurusan ?? $request->jurusan,
+            'id_kelas' => $request->id_kelas,
+            'id_jurusan' => $request->id_jurusan,
             'jenis_kelamin' => $request->jenis_kelamin,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat,
             'no_hp' => $request->no_hp,
+            'foto' => $fotoPath,
         ]);
 
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil ditambahkan');
@@ -114,32 +125,46 @@ class DashboardController extends Controller
         $request->validate([
             'nis' => 'required|unique:siswa,nis,' . $id,
             'nama' => 'required',
-            'kelas' => 'required',
-            'jurusan' => 'required',
-            'jenis_kelamin' => 'required',
-            'tanggal_lahir' => 'required|date',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'id_kelas' => 'required|exists:kelas,id_kelas',
+            'id_jurusan' => 'required|exists:jurusan,id_jurusan',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
             'email' => 'required|email|unique:users,email,' . $siswa->user_id,
+            'password' => 'nullable|min:6',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        $kelas = Kelas::find($request->id_kelas);
+        $jurusan = Jurusan::find($request->id_jurusan);
+
+        $userData = ['email' => $request->email];
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        $siswa->user->update($userData);
+
+        if ($request->hasFile('foto')) {
+            if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+                Storage::disk('public')->delete($siswa->foto);
+            }
+            $fotoPath = $request->file('foto')->store('foto_siswa', 'public');
+            $siswa->foto = $fotoPath;
+        }
 
         $siswa->update([
             'nis' => $request->nis,
             'nama' => $request->nama,
-            'kelas' => $request->kelas,
-            'jurusan' => $request->jurusan,
+            'kelas' => $kelas->nama_kelas ?? $request->kelas,
+            'jurusan' => $jurusan->nama_jurusan ?? $request->jurusan,
+            'id_kelas' => $request->id_kelas,
+            'id_jurusan' => $request->id_jurusan,
             'jenis_kelamin' => $request->jenis_kelamin,
             'tanggal_lahir' => $request->tanggal_lahir,
             'alamat' => $request->alamat,
             'no_hp' => $request->no_hp,
         ]);
-
-        if ($request->filled('password')) {
-            $request->validate(['password' => 'min:6']);
-            $siswa->user->update(['password' => Hash::make($request->password)]);
-        }
-
-        $siswa->user->update(['email' => $request->email]);
 
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil diupdate');
     }
@@ -154,7 +179,7 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil dihapus');
     }
 
-    // ==================== CRUD GURU (dengan jabatan) ====================
+    // ==================== CRUD GURU ====================
     public function storeGuru(Request $request)
     {
         $request->validate([
@@ -228,7 +253,6 @@ class DashboardController extends Controller
             }
             $fotoPath = $request->file('foto')->store('foto_guru', 'public');
             $guru->foto = $fotoPath;
-            $guru->save();
         }
 
         $guru->update([
@@ -326,20 +350,17 @@ class DashboardController extends Controller
             'status' => 'required|in:Aktif,Tidak Aktif'
         ]);
 
-        // Create user
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'petugas'
         ]);
 
-        // Handle foto
         $fotoPath = null;
         if ($request->hasFile('foto')) {
             $fotoPath = $request->file('foto')->store('foto_petugas', 'public');
         }
 
-        // Create petugas
         Petugas::create([
             'user_id' => $user->id,
             'nip' => $request->nip,
@@ -372,14 +393,12 @@ class DashboardController extends Controller
             'status' => 'required|in:Aktif,Tidak Aktif'
         ]);
 
-        // Update user
         $userData = ['email' => $request->email];
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
         $petugas->user->update($userData);
 
-        // Handle foto
         if ($request->hasFile('foto')) {
             if ($petugas->foto && Storage::disk('public')->exists($petugas->foto)) {
                 Storage::disk('public')->delete($petugas->foto);
@@ -388,7 +407,6 @@ class DashboardController extends Controller
             $petugas->foto = $fotoPath;
         }
 
-        // Update petugas
         $petugas->update([
             'nip' => $request->nip,
             'nama' => $request->nama,
@@ -577,10 +595,10 @@ class DashboardController extends Controller
         return redirect()->route('admin.kategori')->with('success', 'Ruangan berhasil dihapus');
     }
 
-    // ==================== MANAJEMEN ASPIRASI/PENGADUAN ====================
+    // ==================== ASPIRASI MANAGEMENT ====================
     public function pengaduan(Request $request)
     {
-        $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori']);
+        $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -590,60 +608,46 @@ class DashboardController extends Controller
             $query->where('id_kategori', $request->kategori);
         }
 
-        if ($request->filled('bulan')) {
-            $query->whereMonth('created_at', $request->bulan);
-        }
-
-        if ($request->filled('tahun')) {
-            $query->whereYear('created_at', $request->tahun);
-        }
-
         if ($request->filled('search')) {
-            $query->where('keterangan', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('keterangan', 'like', '%' . $request->search . '%')
+                    ->orWhere('lokasi', 'like', '%' . $request->search . '%');
+            });
         }
 
         $aspirasi = $query->orderBy('created_at', 'desc')->paginate(10);
         $kategoris = Kategori::all();
+        $ruangans = Ruangan::all();
 
-        return view('admin.pengaduan.index', compact('aspirasi', 'kategoris'));
+        $statistik = [
+            'total' => Aspirasi::count(),
+            'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
+            'proses' => Aspirasi::where('status', 'Proses')->count(),
+            'selesai' => Aspirasi::where('status', 'Selesai')->count(),
+        ];
+
+        return view('admin.pengaduan.index', compact('aspirasi', 'kategoris', 'ruangans', 'statistik'));
     }
 
     public function pengaduanDetail($id)
     {
-        $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'progres.user', 'historyStatus.pengubah'])->findOrFail($id);
+        $aspirasi = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres.user', 'historyStatus.pengubah'])
+            ->findOrFail($id);
+
         $kategoris = Kategori::all();
+        $ruangans = Ruangan::all();
 
-        return view('admin.pengaduan.detail', compact('aspirasi', 'kategoris'));
-    }
-
-    public function updateStatus(Request $request, $id)
-    {
-        $aspirasi = Aspirasi::findOrFail($id);
-        $statusLama = $aspirasi->status;
-        $statusBaru = $request->status;
-
-        HistoryStatus::create([
-            'id_aspirasi' => $id,
-            'status_lama' => $statusLama,
-            'status_baru' => $statusBaru,
-            'diubah_oleh' => auth()->id(),
-        ]);
-
-        $aspirasi->update(['status' => $statusBaru]);
-
-        return redirect()->back()->with('success', 'Status aspirasi berhasil diupdate');
+        return view('admin.pengaduan.detail', compact('aspirasi', 'kategoris', 'ruangans'));
     }
 
     public function storeFeedback(Request $request, $id)
     {
-        $request->validate([
-            'feedback' => 'required'
-        ]);
+        $request->validate(['feedback' => 'required|string']);
 
         Progres::create([
             'id_aspirasi' => $id,
             'user_id' => auth()->id(),
-            'keterangan_progres' => 'Feedback: ' . $request->feedback,
+            'keterangan_progres' => 'Feedback dari Admin: ' . $request->feedback,
         ]);
 
         return redirect()->back()->with('success', 'Feedback berhasil ditambahkan');
@@ -651,9 +655,7 @@ class DashboardController extends Controller
 
     public function storeProgres(Request $request, $id)
     {
-        $request->validate([
-            'keterangan_progres' => 'required'
-        ]);
+        $request->validate(['keterangan_progres' => 'required|string']);
 
         Progres::create([
             'id_aspirasi' => $id,
@@ -662,6 +664,53 @@ class DashboardController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Progres berhasil ditambahkan');
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:Menunggu,Proses,Selesai',
+            'keterangan_progres' => 'nullable|string'
+        ]);
+
+        $aspirasi = Aspirasi::findOrFail($id);
+        $statusLama = $aspirasi->status;
+        $statusBaru = $request->status;
+
+        // INI PENTING: Simpan history status
+        HistoryStatus::create([
+            'id_aspirasi' => $id,
+            'status_lama' => $statusLama,
+            'status_baru' => $statusBaru,
+            'diubah_oleh' => auth()->id(),
+        ]);
+
+        // Update status
+        $aspirasi->update(['status' => $statusBaru]);
+
+        // Simpan progres jika ada keterangan
+        if ($request->filled('keterangan_progres')) {
+            Progres::create([
+                'id_aspirasi' => $id,
+                'user_id' => auth()->id(),
+                'keterangan_progres' => $request->keterangan_progres,
+            ]);
+        }
+
+        // Jika status menjadi Selesai, tambahkan progres otomatis
+        if ($statusBaru == 'Selesai') {
+            Progres::create([
+                'id_aspirasi' => $id,
+                'user_id' => auth()->id(),
+                'keterangan_progres' => 'Aspirasi telah selesai ditangani oleh Admin',
+            ]);
+        }
+
+        $message = $statusBaru == 'Selesai'
+            ? 'Aspirasi telah selesai dan masuk ke history'
+            : 'Status berhasil diupdate';
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function destroyAspirasi($id)
@@ -676,6 +725,90 @@ class DashboardController extends Controller
         HistoryStatus::where('id_aspirasi', $id)->delete();
         $aspirasi->delete();
 
-        return redirect()->back()->with('success', 'Aspirasi berhasil dihapus');
+        return redirect()->route('admin.pengaduan')->with('success', 'Aspirasi berhasil dihapus');
+    }
+
+    public function history(Request $request)
+    {
+        // Ambil semua history tanpa filter status_baru
+        $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah']);
+
+        if ($request->filled('status')) {
+            $query->where('status_baru', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $history = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        $statistik = [
+            'total' => HistoryStatus::count(),
+            'menunggu' => HistoryStatus::where('status_baru', 'Menunggu')->count(),
+            'proses' => HistoryStatus::where('status_baru', 'Proses')->count(),
+            'selesai' => HistoryStatus::where('status_baru', 'Selesai')->count(),
+        ];
+
+        return view('admin.history', compact('history', 'statistik'));
+    }
+
+    // ==================== IMPORT SISWA ====================
+    public function importSiswa(Request $request)
+    {
+        $request->validate(['file_excel' => 'required|mimes:xlsx,xls,csv|max:2048']);
+
+        try {
+            $import = new SiswaImport();
+            Excel::import($import, $request->file('file_excel'));
+
+            $successCount = $import->getSuccessCount();
+            $failures = $import->getFailures();
+
+            $successMessage = "Berhasil mengimport {$successCount} data siswa.";
+
+            if (count($failures) > 0) {
+                $errorMessages = [];
+                foreach ($failures as $failure) {
+                    $errorMessages[] = "Data: " . json_encode($failure['row']) . " - Error: " . $failure['errors'];
+                }
+                return redirect()->back()->with('warning', $successMessage . ' Namun ada data yang gagal diimport.')->with('import_errors', $errorMessages);
+            }
+
+            return redirect()->route('admin.users')->with('success', $successMessage);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errors = [];
+            foreach ($failures as $failure) {
+                $errors[] = "Baris " . $failure->row() . ": " . implode(', ', $failure->errors());
+            }
+            return redirect()->back()->with('warning', 'Validasi gagal:<br>' . implode('<br>', $errors))->with('import_errors', $errors);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal import data: ' . $e->getMessage());
+        }
+    }
+
+    // Download template Excel
+    public function downloadTemplateSiswa()
+    {
+        $headers = ['nis', 'nama', 'kelas', 'jurusan', 'jenis_kelamin', 'tanggal_lahir', 'no_hp', 'email', 'password', 'alamat'];
+
+        $callback = function () use ($headers) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, $headers);
+            fputcsv($file, ['232410001', 'Ahmad Fauzi', '10 RPL', 'RPL', 'L', '2008-05-15', '081234567890', 'ahmad@example.com', 'siswa123', 'Jl. Pendidikan No.1']);
+            fputcsv($file, ['232410002', 'Siti Aminah', '10 TKJ', 'TKJ', 'P', '2008-08-20', '081234567891', 'siti@example.com', 'siswa123', 'Jl. Merdeka No.2']);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="template_siswa.csv"',
+        ]);
     }
 }

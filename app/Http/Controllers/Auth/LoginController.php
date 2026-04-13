@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Guru;
 use App\Models\Siswa;
+use App\Models\Petugas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -32,7 +33,7 @@ class LoginController extends Controller
         $login = $request->login;
         $password = $request->password;
         
-        // Cari user berdasarkan email (admin)
+        // Cari user berdasarkan email (admin, guru, siswa, petugas)
         $user = User::where('email', $login)->first();
         
         // Jika tidak ditemukan, cari berdasarkan NIP (guru)
@@ -51,6 +52,14 @@ class LoginController extends Controller
             }
         }
         
+        // Jika masih tidak ditemukan, cari berdasarkan NIP (petugas)
+        if (!$user) {
+            $petugas = Petugas::where('nip', $login)->first();
+            if ($petugas) {
+                $user = $petugas->user;
+            }
+        }
+        
         // Jika user ditemukan dan password cocok
         if ($user && Hash::check($password, $user->password)) {
             Auth::login($user);
@@ -62,6 +71,8 @@ class LoginController extends Controller
                 return redirect()->intended(route('guru.dashboard'));
             } elseif ($user->role === 'siswa') {
                 return redirect()->intended(route('siswa.dashboard'));
+            } elseif ($user->role === 'petugas') {
+                return redirect()->intended(route('petugas.dashboard'));
             }
         }
         

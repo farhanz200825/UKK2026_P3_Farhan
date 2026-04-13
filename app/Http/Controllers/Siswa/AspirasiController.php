@@ -5,28 +5,19 @@ namespace App\Http\Controllers\Siswa;
 use App\Http\Controllers\Controller;
 use App\Models\Aspirasi;
 use App\Models\Kategori;
-use App\Models\Progres;
 use App\Models\Ruangan;
+use App\Models\Progres;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class AspirasiController extends Controller
 {
-    public function index()
-    {
-        $aspirasi = Aspirasi::with(['kategori'])
-            ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        
-        return view('siswa.aspirasi.index', compact('aspirasi'));
-    }
-
     public function create()
     {
         $kategoris = Kategori::all();
-        $ruangans = Ruangan::all();
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
+        
         return view('siswa.aspirasi.create', compact('kategoris', 'ruangans'));
     }
 
@@ -34,10 +25,13 @@ class AspirasiController extends Controller
     {
         $request->validate([
             'id_kategori' => 'required|exists:kategori,id_kategori',
-            'lokasi' => 'required|string|max:100',
+            'id_ruangan' => 'required|exists:ruangan,id_ruangan',
             'keterangan' => 'required|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        $ruangan = Ruangan::find($request->id_ruangan);
+        $lokasi = $ruangan->nama_ruangan . ' (' . $ruangan->kode_ruangan . ')';
 
         $fotoPath = null;
         if ($request->hasFile('foto')) {
@@ -47,7 +41,8 @@ class AspirasiController extends Controller
         Aspirasi::create([
             'user_id' => Auth::id(),
             'id_kategori' => $request->id_kategori,
-            'lokasi' => $request->lokasi,
+            'id_ruangan' => $request->id_ruangan,
+            'lokasi' => $lokasi,
             'keterangan' => $request->keterangan,
             'foto' => $fotoPath,
             'status' => 'Menunggu'
@@ -57,9 +52,19 @@ class AspirasiController extends Controller
             ->with('success', 'Aspirasi berhasil dikirim');
     }
 
+    public function index()
+    {
+        $aspirasi = Aspirasi::with(['kategori', 'ruangan'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        return view('siswa.aspirasi.index', compact('aspirasi'));
+    }
+
     public function detail($id)
     {
-        $aspirasi = Aspirasi::with(['kategori', 'progres.user', 'historyStatus.pengubah'])
+        $aspirasi = Aspirasi::with(['kategori', 'ruangan', 'progres.user', 'historyStatus.pengubah'])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
         
@@ -68,38 +73,42 @@ class AspirasiController extends Controller
 
     public function status()
     {
-        $aspirasi = Aspirasi::with(['kategori'])
+        $aspirasi = Aspirasi::with(['kategori', 'ruangan'])
             ->where('user_id', Auth::id())
+            ->where('status', '!=', 'Selesai')
+            ->orderByRaw("FIELD(status, 'Proses', 'Menunggu')")
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('siswa.aspirasi.status', compact('aspirasi'));
+        $statistik = [
+            'total' => $aspirasi->count(),
+            'menunggu' => $aspirasi->where('status', 'Menunggu')->count(),
+            'proses' => $aspirasi->where('status', 'Proses')->count(),
+        ];
+        
+        return view('siswa.aspirasi.status', compact('aspirasi', 'statistik'));
     }
 
     public function history()
     {
-        $history = Aspirasi::with(['kategori', 'historyStatus'])
+        $aspirasiSelesai = Aspirasi::with(['kategori', 'ruangan', 'historyStatus.pengubah'])
             ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
+            ->where('status', 'Selesai')
+            ->orderBy('updated_at', 'desc')
             ->get();
         
-        return view('siswa.aspirasi.history', compact('history'));
+        return view('siswa.aspirasi.history', compact('aspirasiSelesai'));
     }
 
-    // METHOD STORE FEEDBACK - PERBAIKAN
     public function storeFeedback(Request $request, $id)
     {
         $request->validate([
             'feedback' => 'required|string|min:3'
         ]);
         
-        // Pastikan aspirasi milik siswa yang login
-        $aspirasi = Aspirasi::where('user_id', Auth::id())->find($id);
-        
-        if (!$aspirasi) {
-            return redirect()->route('siswa.aspirasi.index')
-                ->with('error', 'Aspirasi tidak ditemukan');
-        }
+        $aspirasi = Aspirasi::where('user_id', Auth::id())
+            ->where('status', '!=', 'Selesai')
+            ->findOrFail($id);
         
         Progres::create([
             'id_aspirasi' => $id,

@@ -21,8 +21,9 @@
                             @endphp
                             {{ $pengirim->nama ?? $aspirasi->user->email }}
                             <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
-                        </td>
-                    </tr>
+                        
+
+                    
                     <tr><th>Keterangan</th><td>{{ $aspirasi->keterangan }}</td></tr>
                     @if($aspirasi->foto)
                     <tr><th>Foto</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td></tr>
@@ -32,20 +33,21 @@
                             <span class="badge bg-{{ $aspirasi->status == 'Selesai' ? 'success' : ($aspirasi->status == 'Proses' ? 'info' : 'warning') }}">
                                 {{ $aspirasi->status }}
                             </span>
-                        </td>
-                    </tr>
+                        
+
+                    
                     <tr><th>Dibuat Pada</th><td>{{ $aspirasi->created_at->format('d/m/Y H:i:s') }}</td></tr>
                 </table>
             </div>
         </div>
 
-        <!-- Form Feedback & Progres untuk Admin -->
+        <!-- Form Feedback & Progres untuk Petugas -->
         <div class="card mt-3">
             <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="ph ph-chat"></i> Kelola Aspirasi (Admin)</h6>
+                <h6 class="mb-0"><i class="ph ph-chat"></i> Kelola Aspirasi (Petugas)</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.pengaduan.feedback', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
+                <form action="{{ route('petugas.aspirasi.feedback', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
                     @csrf
                     <div class="mb-2">
                         <label class="form-label">Feedback untuk Pengirim</label>
@@ -58,7 +60,7 @@
                 
                 <hr>
                 
-                <form action="{{ route('admin.pengaduan.progres', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
+                <form action="{{ route('petugas.aspirasi.progres', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
                     @csrf
                     <div class="mb-2">
                         <label class="form-label">Update Progres Penanganan</label>
@@ -71,7 +73,7 @@
                 
                 <hr>
                 
-                <form action="{{ route('admin.pengaduan.status', $aspirasi->id_aspirasi) }}" method="POST">
+                <form action="{{ route('petugas.aspirasi.status', $aspirasi->id_aspirasi) }}" method="POST">
                     @csrf
                     <div class="row">
                         <div class="col-md-8">

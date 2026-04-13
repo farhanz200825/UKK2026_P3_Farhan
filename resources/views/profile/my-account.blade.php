@@ -11,9 +11,11 @@
                     @php
                     $fotoPath = null;
                     if($user->role == 'siswa' && $user->siswa && $user->siswa->foto) {
-                    $fotoPath = asset('storage/' . $user->siswa->foto);
+                        $fotoPath = asset('storage/' . $user->siswa->foto);
                     } elseif($user->role == 'guru' && $user->guru && $user->guru->foto) {
-                    $fotoPath = asset('storage/' . $user->guru->foto);
+                        $fotoPath = asset('storage/' . $user->guru->foto);
+                    } elseif($user->role == 'petugas' && $user->petugas && $user->petugas->foto) {
+                        $fotoPath = asset('storage/' . $user->petugas->foto);
                     }
                     @endphp
 
@@ -27,13 +29,26 @@
                     </div>
                     @endif
                 </div>
-                <h5>{{ $profile->nama ?? $user->email }}</h5>
+                
+                @php
+                    $displayName = '-';
+                    if($user->role == 'siswa' && $user->siswa) {
+                        $displayName = $user->siswa->nama;
+                    } elseif($user->role == 'guru' && $user->guru) {
+                        $displayName = $user->guru->nama;
+                    } elseif($user->role == 'petugas' && $user->petugas) {
+                        $displayName = $user->petugas->nama;
+                    } else {
+                        $displayName = $user->email;
+                    }
+                @endphp
+                <h5>{{ $displayName }}</h5>
                 <span class="badge bg-primary">{{ ucfirst($user->role) }}</span>
                 <hr>
                 <div class="text-start">
                     <p><strong>Email:</strong> {{ $user->email }}</p>
-                    <p><strong>Terdaftar:</strong> {{ $user->created_at->format('d/m/Y H:i:s') }}</p>
-                    <p><strong>Terakhir Update:</strong> {{ $user->updated_at->format('d/m/Y H:i:s') }}</p>
+                    <p><strong>Terdaftar:</strong> {{ $user->created_at ? $user->created_at->format('d/m/Y H:i:s') : '-' }}</p>
+                    <p><strong>Terakhir Update:</strong> {{ $user->updated_at ? $user->updated_at->format('d/m/Y H:i:s') : '-' }}</p>
                 </div>
             </div>
         </div>
@@ -46,70 +61,113 @@
             </div>
             <div class="card-body">
                 <table class="table table-bordered">
-                    @if($user->role == 'siswa')
+                    @if($user->role == 'siswa' && $user->siswa)
                     <tr>
                         <th width="30%">NIS</th>
-                        <td>{{ $profile->nis ?? '-' }}</td>
+                        <td>{{ $user->siswa->nis ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Nama Lengkap</th>
-                        <td>{{ $profile->nama ?? '-' }}</td>
+                        <td>{{ $user->siswa->nama ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Kelas</th>
-                        <td>{{ $profile->kelas ?? '-' }}</td>
+                        <td>{{ $user->siswa->kelas ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Jurusan</th>
-                        <td>{{ $profile->jurusan ?? '-' }}</td>
+                        <td>{{ $user->siswa->jurusan ?? '-' }}</td>
                     </tr>
-                    @elseif($user->role == 'guru')
+                    <tr>
+                        <th>Jenis Kelamin</th>
+                        <td>{{ ($user->siswa->jenis_kelamin ?? '') == 'L' ? 'Laki-laki' : (($user->siswa->jenis_kelamin ?? '') == 'P' ? 'Perempuan' : '-') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tanggal Lahir</th>
+                        <td>{{ $user->siswa->tanggal_lahir ? date('d/m/Y', strtotime($user->siswa->tanggal_lahir)) : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>No HP</th>
+                        <td>{{ $user->siswa->no_hp ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Alamat</th>
+                        <td>{{ $user->siswa->alamat ?? '-' }}</td>
+                    </tr>
+
+                    @elseif($user->role == 'guru' && $user->guru)
                     <tr>
                         <th>NIP</th>
-                        <td>{{ $profile->nip ?? '-' }}</td>
+                        <td>{{ $user->guru->nip ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Nama Lengkap</th>
-                        <td>{{ $profile->nama ?? '-' }}</td>
+                        <td>{{ $user->guru->nama ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Mata Pelajaran</th>
-                        <td>{{ $profile->mata_pelajaran ?? '-' }}</td>
+                        <td>{{ $user->guru->mata_pelajaran ?? '-' }}</td>
                     </tr>
-                    @endif
-
+                    <tr>
+                        <th>Jabatan</th>
+                        <td>{{ $user->guru->jabatan ?? '-' }}</td>
+                    </tr>
                     <tr>
                         <th>Jenis Kelamin</th>
-                        <td>{{ $profile->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
+                        <td>{{ ($user->guru->jenis_kelamin ?? '') == 'L' ? 'Laki-laki' : (($user->guru->jenis_kelamin ?? '') == 'P' ? 'Perempuan' : '-') }}</td>
                     </tr>
-
                     <tr>
                         <th>Tanggal Lahir</th>
-                        <td>{{ $profile->tanggal_lahir ? date('d/m/Y', strtotime($profile->tanggal_lahir)) : '-' }}</td>
+                        <td>{{ $user->guru->tanggal_lahir ? date('d/m/Y', strtotime($user->guru->tanggal_lahir)) : '-' }}</td>
                     </tr>
-
                     <tr>
                         <th>No HP</th>
-                        <td>{{ $profile->no_hp ?? '-' }}</td>
+                        <td>{{ $user->guru->no_hp ?? '-' }}</td>
                     </tr>
-
                     <tr>
                         <th>Alamat</th>
-                        <td>{{ $profile->alamat ?? '-' }}</td>
+                        <td>{{ $user->guru->alamat ?? '-' }}</td>
+                    </tr>
+
+                    @elseif($user->role == 'petugas' && $user->petugas)
+                    <tr>
+                        <th>NIP</th>
+                        <td>{{ $user->petugas->nip ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nama Lengkap</th>
+                        <td>{{ $user->petugas->nama ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Jenis Kelamin</th>
+                        <td>{{ ($user->petugas->jenis_kelamin ?? '') == 'L' ? 'Laki-laki' : (($user->petugas->jenis_kelamin ?? '') == 'P' ? 'Perempuan' : '-') }}</td>
                     </tr>
                     <tr>
                         <th>Tanggal Lahir</th>
+                        <td>{{ $user->petugas->tanggal_lahir ? date('d/m/Y', strtotime($user->petugas->tanggal_lahir)) : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>No HP</th>
+                        <td>{{ $user->petugas->no_hp ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Alamat</th>
+                        <td>{{ $user->petugas->alamat ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
                         <td>
-                            @php
-                            $tglLahir = $profile->tanggal_lahir ?? '';
-                            if($tglLahir) {
-                            echo date('d/m/Y', strtotime($tglLahir));
-                            } else {
-                            echo '-';
-                            }
-                            @endphp
+                            <span class="badge bg-{{ ($user->petugas->status ?? '') == 'Aktif' ? 'success' : 'danger' }}">
+                                {{ $user->petugas->status ?? '-' }}
+                            </span>
                         </td>
                     </tr>
+
+                    @else
+                    <tr>
+                        <td colspan="2" class="text-center">Data profil tidak tersedia</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
             <div class="card-footer">

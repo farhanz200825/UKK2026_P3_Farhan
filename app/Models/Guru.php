@@ -17,7 +17,7 @@ class Guru extends Model
         'nip',
         'nama',
         'mata_pelajaran',
-        'jabatan', // Tambahkan ini
+        'jabatan',
         'jenis_kelamin',
         'tanggal_lahir',
         'alamat',
@@ -25,15 +25,45 @@ class Guru extends Model
         'foto'
     ];
     
-    protected $casts = [
-        'tanggal_lahir' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime'
-    ];
-    
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    // Bisa membuat aspirasi (seperti siswa)
+    public function canCreateAspirasi()
+    {
+        return $this->jabatan == 'Guru';
+    }
+    
+    // Bisa memberi feedback dan update progres
+    public function canManageAspirasi()
+    {
+        return $this->jabatan == 'Wali Kelas';
+    }
+    
+    // Bisa mengubah status
+    public function canChangeStatus()
+    {
+        return $this->jabatan == 'Wali Kelas';
+    }
+    
+    // Bisa melihat semua data aspirasi (read only)
+    public function canViewAllAspirasi()
+    {
+        return in_array($this->jabatan, ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Jurusan', 'Wali Kelas']);
+    }
+    
+    // Bisa melihat statistik
+    public function canViewStatistik()
+    {
+        return in_array($this->jabatan, ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Jurusan']);
+    }
+    
+    // Hanya bisa melihat statistik (tanpa lihat data)
+    public function canOnlyView()
+    {
+        return false; // Tidak digunakan lagi
     }
     
     public function getJabatanBadgeAttribute()
@@ -49,8 +79,9 @@ class Guru extends Model
         return $badges[$this->jabatan] ?? 'secondary';
     }
     
-    public function getJenisKelaminTextAttribute()
+    // Relasi ke aspirasi (untuk guru yang membuat aspirasi)
+    public function aspirasi()
     {
-        return $this->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan';
+        return $this->hasMany(Aspirasi::class, 'user_id', 'user_id');
     }
 }

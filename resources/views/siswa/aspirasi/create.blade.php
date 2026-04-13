@@ -48,16 +48,27 @@
                         <div id="kategoriDeskripsi" class="small text-muted mt-1"></div>
                     </div>
                     
-                    <!-- Lokasi -->
+                    <!-- Lokasi (Dari Tabel Ruangan) -->
                     <div class="mb-3">
-                        <label class="form-label">Lokasi <span class="text-danger">*</span></label>
+                        <label class="form-label">Lokasi Ruangan <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="ph ph-map-pin"></i></span>
-                            <input type="text" name="lokasi" class="form-control" 
-                                   value="{{ old('lokasi') }}" 
-                                   placeholder="Contoh: Ruang Kelas X IPA 1" required>
+                            <span class="input-group-text"><i class="ph ph-building"></i></span>
+                            <select name="id_ruangan" class="form-select" required>
+                                <option value="">-- Pilih Ruangan --</option>
+                                @foreach($ruangans as $ruangan)
+                                    <option value="{{ $ruangan->id_ruangan }}" 
+                                            data-jenis="{{ $ruangan->jenis_ruangan }}"
+                                            data-lokasi="{{ $ruangan->lokasi }}"
+                                            data-kondisi="{{ $ruangan->kondisi }}"
+                                            {{ old('id_ruangan') == $ruangan->id_ruangan ? 'selected' : '' }}>
+                                        {{ $ruangan->kode_ruangan }} - {{ $ruangan->nama_ruangan }} 
+                                        ({{ $ruangan->jenis_ruangan }})
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-                        <small class="text-muted">Tentukan lokasi yang jelas agar mudah ditemukan</small>
+                        <div id="ruanganDetail" class="small text-muted mt-1"></div>
+                        <small class="text-muted">Pilih ruangan yang bermasalah dari daftar ruangan yang tersedia</small>
                     </div>
                     
                     <!-- Keterangan -->
@@ -80,9 +91,9 @@
                     <div class="alert alert-info">
                         <i class="ph ph-info"></i> <strong>Informasi:</strong>
                         <ul class="mb-0 mt-1">
-                            <li>Setelah dikirim, aspirasi akan masuk ke admin/guru untuk ditindaklanjuti</li>
+                            <li>Setelah dikirim, aspirasi akan masuk ke admin/guru/petugas untuk ditindaklanjuti</li>
                             <li>Status aspirasi dapat dilihat di menu "Status Aspirasi"</li>
-                            <li>Anda akan mendapatkan feedback dari guru/admin melalui menu "Feedback"</li>
+                            <li>Anda akan mendapatkan feedback dari petugas melalui menu "Feedback"</li>
                         </ul>
                     </div>
                     
@@ -136,5 +147,34 @@
     
     kategoriSelect.addEventListener('change', showKategoriDeskripsi);
     showKategoriDeskripsi();
+    
+    // Tampilkan detail ruangan
+    const ruanganSelect = document.querySelector('select[name="id_ruangan"]');
+    const ruanganDetail = document.getElementById('ruanganDetail');
+    
+    function showRuanganDetail() {
+        const selectedOption = ruanganSelect.options[ruanganSelect.selectedIndex];
+        if (selectedOption && ruanganSelect.value) {
+            const jenis = selectedOption.getAttribute('data-jenis');
+            const lokasi = selectedOption.getAttribute('data-lokasi');
+            const kondisi = selectedOption.getAttribute('data-kondisi');
+            
+            let kondisiBadge = '';
+            if (kondisi === 'Baik') kondisiBadge = '<span class="badge bg-success">Baik</span>';
+            else if (kondisi === 'Rusak Ringan') kondisiBadge = '<span class="badge bg-warning">Rusak Ringan</span>';
+            else if (kondisi === 'Rusak Berat') kondisiBadge = '<span class="badge bg-danger">Rusak Berat</span>';
+            else if (kondisi === 'Dalam Perbaikan') kondisiBadge = '<span class="badge bg-info">Dalam Perbaikan</span>';
+            
+            ruanganDetail.innerHTML = '<i class="ph ph-info"></i> ' +
+                '<strong>Jenis:</strong> ' + jenis + ' | ' +
+                '<strong>Lokasi:</strong> ' + (lokasi || '-') + ' | ' +
+                '<strong>Kondisi:</strong> ' + kondisiBadge;
+        } else {
+            ruanganDetail.innerHTML = '';
+        }
+    }
+    
+    ruanganSelect.addEventListener('change', showRuanganDetail);
+    showRuanganDetail();
 </script>
 @endpush
