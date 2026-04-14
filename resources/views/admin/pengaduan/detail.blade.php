@@ -25,7 +25,7 @@
                     </tr>
                     <tr><th>Keterangan</th><td>{{ $aspirasi->keterangan }}</td></tr>
                     @if($aspirasi->foto)
-                    <tr><th>Foto</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td></tr>
+                    <tr><th>Foto Awal</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td></tr>
                     @endif
                     <tr><th>Status</th>
                         <td>
@@ -71,27 +71,46 @@
                 
                 <hr>
                 
-                <form action="{{ route('admin.pengaduan.status', $aspirasi->id_aspirasi) }}" method="POST">
+                <!-- FORM UPDATE STATUS DENGAN FOTO -->
+                <form action="{{ route('admin.pengaduan.status', $aspirasi->id_aspirasi) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="row">
-                        <div class="col-md-8">
-                            <label class="form-label">Ubah Status</label>
-                            <select name="status" class="form-select">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Ubah Status <span class="text-danger">*</span></label>
+                            <select name="status" class="form-select" id="statusSelect" required>
                                 <option value="Menunggu" {{ $aspirasi->status == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
                                 <option value="Proses" {{ $aspirasi->status == 'Proses' ? 'selected' : '' }}>Diproses</option>
                                 <option value="Selesai" {{ $aspirasi->status == 'Selesai' ? 'selected' : '' }}>Selesai</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-warning w-100">
-                                <i class="ph ph-arrow-circle-right"></i> Update Status
-                            </button>
+                        
+                        <!-- Form Keterangan (wajib jika status Selesai) -->
+                        <div class="col-md-12 mb-3" id="keteranganDiv">
+                            <label class="form-label">Keterangan Penanganan <span class="text-danger" id="keteranganRequired" style="display: none;">*</span></label>
+                            <textarea name="keterangan_progres" class="form-control" rows="3" id="keteranganText" placeholder="Jelaskan tindakan yang telah dilakukan..."></textarea>
+                            <small class="text-muted">Isikan keterangan detail tentang penanganan aspirasi</small>
+                        </div>
+                        
+                        <!-- Upload Foto (wajib jika status Selesai) -->
+                        <div class="col-md-12 mb-3" id="fotoDiv">
+                            <label class="form-label">Foto Bukti Penanganan <span class="text-danger" id="fotoRequired" style="display: none;">*</span></label>
+                            <input type="file" name="foto_bukti" class="form-control" id="fotoBukti" accept="image/jpeg,image/png,image/jpg">
+                            <small class="text-muted">Upload foto bukti setelah selesai menangani (max 2MB)</small>
+                            <div id="fotoPreview" class="mt-2" style="display: none;">
+                                <img id="previewImg" src="#" alt="Preview" style="max-width: 100%; border-radius: 8px;">
+                            </div>
                         </div>
                     </div>
-                    <div class="mt-2">
-                        <small class="text-muted">Keterangan perubahan status (opsional):</small>
-                        <textarea name="keterangan_progres" class="form-control mt-1" rows="1" placeholder="Tambahkan keterangan..."></textarea>
+                    
+                    <div class="alert alert-warning" id="warningAlert" style="display: none;">
+                        <i class="ph ph-warning"></i> 
+                        <strong>Perhatian!</strong> Mengubah status menjadi <strong>Selesai</strong> akan memindahkan aspirasi ini ke History.
+                        Pastikan Anda mengisi keterangan dan upload foto bukti penanganan.
                     </div>
+                    
+                    <button type="submit" class="btn btn-warning w-100" id="submitBtn">
+                        <i class="ph ph-arrow-circle-right"></i> Update Status
+                    </button>
                 </form>
             </div>
         </div>
@@ -135,4 +154,111 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Preview foto
+    document.getElementById('fotoBukti').addEventListener('change', function(e) {
+        const preview = document.getElementById('fotoPreview');
+        const img = document.getElementById('previewImg');
+        
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(this.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+    
+    // Status change handler
+    const statusSelect = document.getElementById('statusSelect');
+    const keteranganDiv = document.getElementById('keteranganDiv');
+    const fotoDiv = document.getElementById('fotoDiv');
+    const warningAlert = document.getElementById('warningAlert');
+    const keteranganRequired = document.getElementById('keteranganRequired');
+    const fotoRequired = document.getElementById('fotoRequired');
+    const keteranganText = document.getElementById('keteranganText');
+    const fotoBukti = document.getElementById('fotoBukti');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    function checkStatus() {
+        const isSelesai = statusSelect.value === 'Selesai';
+        
+        if (isSelesai) {
+            // Tampilkan peringatan
+            warningAlert.style.display = 'block';
+            
+            // Tambahkan required attribute
+            keteranganText.required = true;
+            fotoBukti.required = true;
+            
+            // Tampilkan tanda bintang merah
+            keteranganRequired.style.display = 'inline';
+            fotoRequired.style.display = 'inline';
+            
+            // Validasi form
+            validateForm();
+        } else {
+            // Sembunyikan peringatan
+            warningAlert.style.display = 'none';
+            
+            // Hapus required attribute
+            keteranganText.required = false;
+            fotoBukti.required = false;
+            
+            // Sembunyikan tanda bintang merah
+            keteranganRequired.style.display = 'none';
+            fotoRequired.style.display = 'none';
+            
+            // Hapus class is-invalid
+            keteranganText.classList.remove('is-invalid');
+            fotoBukti.classList.remove('is-invalid');
+        }
+    }
+    
+    function validateForm() {
+        if (statusSelect.value === 'Selesai') {
+            if (!keteranganText.value.trim()) {
+                keteranganText.classList.add('is-invalid');
+            } else {
+                keteranganText.classList.remove('is-invalid');
+            }
+            
+            if (!fotoBukti.files.length) {
+                fotoBukti.classList.add('is-invalid');
+            } else {
+                fotoBukti.classList.remove('is-invalid');
+            }
+        }
+    }
+    
+    statusSelect.addEventListener('change', checkStatus);
+    keteranganText.addEventListener('input', validateForm);
+    fotoBukti.addEventListener('change', validateForm);
+    
+    submitBtn.addEventListener('click', function(e) {
+        if (statusSelect.value === 'Selesai') {
+            if (!keteranganText.value.trim()) {
+                e.preventDefault();
+                keteranganText.classList.add('is-invalid');
+                alert('Harap isi keterangan penanganan!');
+                return false;
+            }
+            if (!fotoBukti.files.length) {
+                e.preventDefault();
+                fotoBukti.classList.add('is-invalid');
+                alert('Harap upload foto bukti penanganan!');
+                return false;
+            }
+        }
+    });
+    
+    // Initial check
+    checkStatus();
+</script>
+@endpush
 @endsection

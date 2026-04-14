@@ -85,7 +85,7 @@
                                     </span>
                                 
                                 
-                                <td>{{ $a->created_at->format('d/m/Y') }}</td>
+                                <td>{{ $a->created_at ? $a->created_at->format('d/m/Y') : '-' }}</td>
                                 <td>
                                     <a href="{{ route('guru.aspirasi.detail', $a->id_aspirasi) }}" class="btn btn-sm btn-info">
                                         <i class="ph ph-eye"></i> Detail
@@ -96,7 +96,7 @@
                                 32
                                     <td colspan="{{ $guru->canCreateAspirasi() ? '6' : '7' }}" class="text-center">
                                         Belum ada aspirasi
-                                    
+                                    </td>
                                 
                             @endforelse
                         </tbody>
@@ -110,16 +110,55 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="ph ph-chart-line"></i> Statistik Bulanan</h6>
+    <div class="col-md-4"> 
+        <!-- PERSENTASE STATUS - HANYA UNTUK JABATAN TERTENTU -->
+        @if($guru->canViewStatistik() || $guru->jabatan == 'Kepala Sekolah' || $guru->jabatan == 'Wakil Kepala Sekolah' || $guru->jabatan == 'Kepala Jurusan')
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="ph ph-pie-chart"></i> Persentase Status</h6>
             </div>
             <div class="card-body">
-                <canvas id="chartAspirasi" height="200"></canvas>
+                @php
+                    $total = $statistik['total'] > 0 ? $statistik['total'] : 1;
+                    $persenMenunggu = round(($statistik['menunggu'] / $total) * 100);
+                    $persenProses = round(($statistik['proses'] / $total) * 100);
+                    $persenSelesai = round(($statistik['selesai'] / $total) * 100);
+                @endphp
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Menunggu</span>
+                        <span>{{ $persenMenunggu }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" style="width: {{ $persenMenunggu }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Diproses</span>
+                        <span>{{ $persenProses }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" style="width: {{ $persenProses }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Selesai</span>
+                        <span>{{ $persenSelesai }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: {{ $persenSelesai }}%"></div>
+                    </div>
+                </div>
             </div>
         </div>
+        @endif
         
+        <!-- INFORMASI AKUN - UNTUK SEMUA JABATAN -->
         <div class="card mt-3">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0"><i class="ph ph-info"></i> Informasi Akun</h6>
@@ -129,7 +168,7 @@
                     <tr><th>Nama</th><td>{{ $guru->nama }}</td></tr>
                     <tr><th>Jabatan</th><td><span class="badge bg-{{ $guru->jabatan_badge }}">{{ $guru->jabatan }}</span></td></tr>
                     <tr><th>NIP</th><td>{{ $guru->nip ?? '-' }}</td></tr>
-                    <tr><th>Mata Pelajaran</th><td>{{ $guru->mata_pelajaran ?? '-' }}</td></tr>
+                    <tr><th>Mata Pelajaran</th><td>{{ $guru->mata_pelajaran ?? '-' }}Ru
                 </table>
             </div>
         </div>
@@ -140,24 +179,52 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('chartAspirasi').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($bulanLabels) !!},
-            datasets: [{
-                label: 'Jumlah Aspirasi',
-                data: {!! json_encode($bulanData) !!},
-                borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: { legend: { position: 'bottom' } }
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('chartAspirasi');
+        if (canvas) {
+            const labels = {!! json_encode($bulanLabels ?? []) !!};
+            const data = {!! json_encode($bulanData ?? []) !!};
+            
+            if (labels.length > 0 && data.length > 0) {
+                new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Jumlah Aspirasi',
+                            data: data,
+                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                            borderColor: '#4f46e5',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Jumlah: ' + context.raw + ' aspirasi';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                title: { display: true, text: 'Jumlah Aspirasi' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Bulan' }
+                            }
+                        }
+                    }
+                });
+            }
         }
     });
 </script>

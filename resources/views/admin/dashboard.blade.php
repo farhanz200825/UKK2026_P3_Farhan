@@ -92,10 +92,38 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5>Grafik Aspirasi per Bulan</h5>
+                <h5><i class="ph ph-chart-bar"></i> Grafik Aspirasi per Bulan</h5>
             </div>
             <div class="card-body">
-                <canvas id="aspirasiChart" height="200"></canvas>
+                @if(isset($bulanLabels) && count($bulanLabels) > 0)
+                    <!-- Grafik CSS Sederhana -->
+                    <div style="overflow-x: auto;">
+                        <div style="min-width: 500px;">
+                            @foreach($bulanLabels as $index => $label)
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ $label }}</span>
+                                    <span><strong>{{ $bulanData[$index] }}</strong> aspirasi</span>
+                                </div>
+                                <div class="progress">
+                                    @php
+                                        $maxData = max($bulanData) > 0 ? max($bulanData) : 1;
+                                        $persen = ($bulanData[$index] / $maxData) * 100;
+                                    @endphp
+                                    <div class="progress-bar bg-primary" style="width: {{ $persen }}%">
+                                        {{ $bulanData[$index] > 0 ? $bulanData[$index] : '' }}
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center py-4">
+                        <i class="ph ph-chart-line ph-2x text-muted"></i>
+                        <p class="mt-2">Belum ada data untuk grafik</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -114,33 +142,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const ctx = document.getElementById('aspirasiChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($bulanLabels) !!},
-            datasets: [{
-                label: 'Jumlah Aspirasi',
-                data: {!! json_encode($bulanData) !!},
-                borderColor: '#4680ff',
-                backgroundColor: 'rgba(70, 128, 255, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
-        }
-    });
-</script>
-@endpush

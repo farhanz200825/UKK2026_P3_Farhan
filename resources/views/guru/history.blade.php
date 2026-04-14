@@ -1,43 +1,51 @@
 @extends('layouts.admin')
 
-@section('title', 'History Aspirasi Selesai')
+@section('title', 'History Aspirasi')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="ph ph-check-circle"></i> History Aspirasi Selesai</h5>
-                <small>Daftar aspirasi yang sudah selesai ditangani</small>
+                <h5 class="mb-0"><i class="ph ph-check-circle"></i> 
+                    @if($guru->jabatan == 'Wali Kelas')
+                        @if($currentType == 'saya')
+                            History Aspirasi Saya
+                        @else
+                            History Aspirasi Kelas
+                        @endif
+                    @elseif($guru->canCreateAspirasi())
+                        History Aspirasi Saya
+                    @else
+                        History Aspirasi
+                    @endif
+                </h5>
             </div>
             <div class="card-body">
-                <!-- Alert Info -->
+                <!-- TABS KHUSUS UNTUK WALI KELAS -->
+                @if($guru->jabatan == 'Wali Kelas')
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentType == 'kelas' ? 'active' : '' }}" 
+                           href="{{ route('guru.history', ['type' => 'kelas']) }}">
+                            <i class="ph ph-users"></i> History Kelas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $currentType == 'saya' ? 'active' : '' }}" 
+                           href="{{ route('guru.history', ['type' => 'saya']) }}">
+                            <i class="ph ph-user"></i> History Saya
+                        </a>
+                    </li>
+                </ul>
+                @endif
+                
                 <div class="alert alert-success mb-3">
                     <i class="ph ph-check-circle"></i> 
-                    <strong>Informasi:</strong> Halaman ini menampilkan semua aspirasi yang sudah 
-                    <strong>Selesai</strong> ditangani.
+                    <strong>Informasi:</strong> Halaman ini menampilkan aspirasi yang sudah <strong>Selesai</strong>.
                 </div>
                 
-                <!-- Filter -->
-                <form method="GET" class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <label class="form-label">Dari Tanggal</label>
-                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Sampai Tanggal</label>
-                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="ph ph-funnel"></i> Filter
-                        </button>
-                        <a href="{{ route('guru.history') }}" class="btn btn-secondary w-100">
-                            <i class="ph ph-arrow-clockwise"></i> Reset
-                        </a>
-                    </div>
-                </form>
-
+                <!-- Tabel History -->
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover">
                         <thead class="table-light">
@@ -45,12 +53,11 @@
                                 <th width="5%">No</th>
                                 <th>Tanggal Selesai</th>
                                 <th>ID Aspirasi</th>
-                                @if(!$guru->canCreateAspirasi())
-                                <th>Pengirim</th>
+                                @if($guru->jabatan == 'Wali Kelas' && $currentType == 'kelas')
+                                <th>Siswa</th>
                                 @endif
                                 <th>Kategori</th>
                                 <th>Ruangan</th>
-                                <th>Status Akhir</th>
                                 <th>Ditangani Oleh</th>
                                 <th>Aksi</th>
                             </tr>
@@ -59,37 +66,19 @@
                             @forelse($history as $index => $h)
                             <tr>
                                 <td>{{ $history->firstItem() + $index }}</td>
-                                <td>
-                                    @php
-                                        // Format tanggal dengan aman
-                                        $tanggal = '-';
-                                        if($h->created_at) {
-                                            if($h->created_at instanceof \Carbon\Carbon) {
-                                                $tanggal = $h->created_at->format('d/m/Y H:i:s');
-                                            } else {
-                                                $tanggal = date('d/m/Y H:i:s', strtotime($h->created_at));
-                                            }
-                                        }
-                                    @endphp
-                                    {{ $tanggal }}
-                                
-                                
+                                <td>{{ $h->created_at->format('d/m/Y H:i:s') }}</td>
                                 <td>{{ $h->id_aspirasi }}</td>
                                 
-                                @if(!$guru->canCreateAspirasi())
+                                @if($guru->jabatan == 'Wali Kelas' && $currentType == 'kelas')
                                 <td>
-                                    @php
-                                        $pengirim = $h->aspirasi->user->siswa ?? $h->aspirasi->user->guru;
-                                    @endphp
-                                    {{ $pengirim->nama ?? $h->aspirasi->user->email }}
-                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                    {{ $h->aspirasi->user->siswa->nama ?? '-' }}
+                                    <br><small class="text-muted">{{ $h->aspirasi->user->siswa->kelas ?? '-' }}</small>
                                 
                                 
                                 @endif
                                 
                                 <td>{{ $h->aspirasi->kategori->nama_kategori ?? '-' }}</td>
                                 <td>{{ $h->aspirasi->ruangan->nama_ruangan ?? $h->aspirasi->lokasi }}</td>
-                                <td><span class="badge bg-success">Selesai</span></td>
                                 <td>
                                     @php
                                         $pengubah = $h->pengubah;
@@ -117,14 +106,8 @@
                               
                             @empty
                                 32
-                                    <td colspan="{{ $guru->canCreateAspirasi() ? '8' : '9' }}" class="text-center">
-                                        <div class="py-4">
-                                            <i class="ph ph-check-circle ph-2x text-muted"></i>
-                                            <p class="mt-2">Belum ada aspirasi yang selesai</p>
-                                            <a href="{{ route('guru.aspirasi.index') }}" class="btn btn-sm btn-primary">
-                                                <i class="ph ph-list"></i> Lihat Data Aspirasi Aktif
-                                            </a>
-                                        </div>
+                                    <td colspan="{{ ($guru->jabatan == 'Wali Kelas' && $currentType == 'kelas') ? '8' : '7' }}" class="text-center">
+                                        Belum ada history aspirasi
                                     </td>
                                 
                             @endforelse
@@ -132,7 +115,7 @@
                     </table>
                 </div>
                 
-                {{ $history->withQueryString()->links() }}
+                {{ $history->links() }}
             </div>
         </div>
     </div>

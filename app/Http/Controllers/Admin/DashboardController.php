@@ -179,95 +179,98 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Data siswa berhasil dihapus');
     }
 
-    // ==================== CRUD GURU ====================
     public function storeGuru(Request $request)
-    {
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'nip' => 'nullable|unique:guru,nip',
-            'mata_pelajaran' => 'nullable|string|max:100',
-            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'jenis_kelamin' => 'required|in:L,P',
-            'tanggal_lahir' => 'nullable|date',
-            'alamat' => 'nullable|string',
-            'no_hp' => 'nullable|string|max:15',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
-        ]);
+{
+    $request->validate([
+        'nama' => 'required|string|max:100',
+        'nip' => 'nullable|unique:guru,nip',
+        'mata_pelajaran' => 'nullable|string|max:100',
+        'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
+        'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:6',
+        'jenis_kelamin' => 'required|in:L,P',
+        'tanggal_lahir' => 'nullable|date',
+        'alamat' => 'nullable|string',
+        'no_hp' => 'nullable|string|max:15',
+        'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+    ]);
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'guru'
-        ]);
+    $user = User::create([
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => 'guru'
+    ]);
 
-        $fotoPath = null;
-        if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
-        }
-
-        Guru::create([
-            'user_id' => $user->id,
-            'nip' => $request->nip,
-            'nama' => $request->nama,
-            'mata_pelajaran' => $request->mata_pelajaran,
-            'jabatan' => $request->jabatan,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
-            'foto' => $fotoPath
-        ]);
-
-        return redirect()->route('admin.users')->with('success', 'Guru berhasil ditambahkan');
+    $fotoPath = null;
+    if ($request->hasFile('foto')) {
+        $fotoPath = $request->file('foto')->store('foto_guru', 'public');
     }
 
-    public function updateGuru(Request $request, $id)
-    {
-        $guru = Guru::findOrFail($id);
+    Guru::create([
+        'user_id' => $user->id,
+        'nip' => $request->nip,
+        'nama' => $request->nama,
+        'mata_pelajaran' => $request->mata_pelajaran,
+        'jabatan' => $request->jabatan,
+        'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
+        'jenis_kelamin' => $request->jenis_kelamin,
+        'tanggal_lahir' => $request->tanggal_lahir,
+        'alamat' => $request->alamat,
+        'no_hp' => $request->no_hp,
+        'foto' => $fotoPath
+    ]);
 
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'nip' => 'nullable|unique:guru,nip,' . $id,
-            'mata_pelajaran' => 'nullable|string|max:100',
-            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
-            'email' => 'required|email|unique:users,email,' . $guru->user_id,
-            'password' => 'nullable|min:6',
-            'jenis_kelamin' => 'required|in:L,P',
-            'tanggal_lahir' => 'nullable|date',
-            'alamat' => 'nullable|string',
-            'no_hp' => 'nullable|string|max:15',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
-        ]);
+    return redirect()->route('admin.users')->with('success', 'Guru berhasil ditambahkan');
+}
 
-        $userData = ['email' => $request->email];
-        if ($request->filled('password')) {
-            $userData['password'] = Hash::make($request->password);
-        }
-        $guru->user->update($userData);
+public function updateGuru(Request $request, $id)
+{
+    $guru = Guru::findOrFail($id);
 
-        if ($request->hasFile('foto')) {
-            if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
-                Storage::disk('public')->delete($guru->foto);
-            }
-            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
-            $guru->foto = $fotoPath;
-        }
+    $request->validate([
+        'nama' => 'required|string|max:100',
+        'nip' => 'nullable|unique:guru,nip,' . $id,
+        'mata_pelajaran' => 'nullable|string|max:100',
+        'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
+        'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
+        'email' => 'required|email|unique:users,email,' . $guru->user_id,
+        'password' => 'nullable|min:6',
+        'jenis_kelamin' => 'required|in:L,P',
+        'tanggal_lahir' => 'nullable|date',
+        'alamat' => 'nullable|string',
+        'no_hp' => 'nullable|string|max:15',
+        'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+    ]);
 
-        $guru->update([
-            'nip' => $request->nip,
-            'nama' => $request->nama,
-            'mata_pelajaran' => $request->mata_pelajaran,
-            'jabatan' => $request->jabatan,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
-        ]);
-
-        return redirect()->route('admin.users')->with('success', 'Guru berhasil diupdate');
+    $userData = ['email' => $request->email];
+    if ($request->filled('password')) {
+        $userData['password'] = Hash::make($request->password);
     }
+    $guru->user->update($userData);
+
+    if ($request->hasFile('foto')) {
+        if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
+            Storage::disk('public')->delete($guru->foto);
+        }
+        $fotoPath = $request->file('foto')->store('foto_guru', 'public');
+        $guru->foto = $fotoPath;
+    }
+
+    $guru->update([
+        'nip' => $request->nip,
+        'nama' => $request->nama,
+        'mata_pelajaran' => $request->mata_pelajaran,
+        'jabatan' => $request->jabatan,
+        'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
+        'jenis_kelamin' => $request->jenis_kelamin,
+        'tanggal_lahir' => $request->tanggal_lahir,
+        'alamat' => $request->alamat,
+        'no_hp' => $request->no_hp,
+    ]);
+
+    return redirect()->route('admin.users')->with('success', 'Guru berhasil diupdate');
+}
 
     public function destroyGuru($id)
     {
@@ -686,14 +689,15 @@ class DashboardController extends Controller
     {
         $request->validate([
             'status' => 'required|in:Menunggu,Proses,Selesai',
-            'keterangan_progres' => 'nullable|string'
+            'keterangan_progres' => 'required_if:status,Selesai|nullable|string',
+            'foto_bukti' => 'required_if:status,Selesai|nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $aspirasi = Aspirasi::findOrFail($id);
         $statusLama = $aspirasi->status;
         $statusBaru = $request->status;
 
-        // INI PENTING: Simpan history status
+        // Simpan history status
         HistoryStatus::create([
             'id_aspirasi' => $id,
             'status_lama' => $statusLama,
@@ -704,21 +708,35 @@ class DashboardController extends Controller
         // Update status
         $aspirasi->update(['status' => $statusBaru]);
 
+        // Handle upload foto bukti jika status Selesai
+        $fotoBuktiPath = null;
+        if ($request->hasFile('foto_bukti')) {
+            $fotoBuktiPath = $request->file('foto_bukti')->store('aspirasi_bukti', 'public');
+        }
+
         // Simpan progres jika ada keterangan
         if ($request->filled('keterangan_progres')) {
+            $progresText = $request->keterangan_progres;
+            if ($fotoBuktiPath) {
+                $progresText .= "\n\n📎 Foto bukti: " . asset('storage/' . $fotoBuktiPath);
+            }
             Progres::create([
                 'id_aspirasi' => $id,
                 'user_id' => auth()->id(),
-                'keterangan_progres' => $request->keterangan_progres,
+                'keterangan_progres' => $progresText,
             ]);
         }
 
         // Jika status menjadi Selesai, tambahkan progres otomatis
         if ($statusBaru == 'Selesai') {
+            $selesaiText = 'Aspirasi telah selesai ditangani oleh Admin';
+            if ($fotoBuktiPath) {
+                $selesaiText .= "\n\n📎 Foto bukti: " . asset('storage/' . $fotoBuktiPath);
+            }
             Progres::create([
                 'id_aspirasi' => $id,
                 'user_id' => auth()->id(),
-                'keterangan_progres' => 'Aspirasi telah selesai ditangani oleh Admin',
+                'keterangan_progres' => $selesaiText,
             ]);
         }
 

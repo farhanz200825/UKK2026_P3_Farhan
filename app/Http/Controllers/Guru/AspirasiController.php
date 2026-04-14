@@ -20,6 +20,7 @@ class AspirasiController extends Controller
     }
 
     // DASHBOARD - Menampilkan ringkasan statistik
+    // DASHBOARD - Menampilkan ringkasan statistik
     public function dashboard()
     {
         $guru = $this->getGuru();
@@ -32,7 +33,7 @@ class AspirasiController extends Controller
             'selesai' => Aspirasi::where('status', 'Selesai')->count(),
         ];
 
-        // Aspirasi terbaru (5 terakhir)
+        // Aspirasi terbaru (5 terakhir) berdasarkan jabatan
         if ($guru->canCreateAspirasi()) {
             // GURU: hanya lihat aspirasi yang dia buat sendiri
             $aspirasiTerbaru = Aspirasi::with(['kategori', 'ruangan'])
@@ -40,8 +41,23 @@ class AspirasiController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
+        } elseif ($guru->jabatan == 'Wali Kelas') {
+            // WALI KELAS: hanya lihat aspirasi dari kelas yang dia wali
+            $kelasId = $guru->getKelasId();
+
+            if ($kelasId) {
+                $aspirasiTerbaru = Aspirasi::with(['user.siswa', 'kategori', 'ruangan'])
+                    ->whereHas('user.siswa', function ($q) use ($kelasId) {
+                        $q->where('id_kelas', $kelasId);
+                    })
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+            } else {
+                $aspirasiTerbaru = collect();
+            }
         } elseif ($guru->canViewAllAspirasi()) {
-            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN, WALI KELAS: lihat semua aspirasi
+            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi
             $aspirasiTerbaru = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
                 ->orderBy('created_at', 'desc')
                 ->take(5)
@@ -64,50 +80,63 @@ class AspirasiController extends Controller
         return view('guru.dashboard', compact('guru', 'statistik', 'aspirasiTerbaru', 'bulanLabels', 'bulanData'));
     }
 
-    // DATA ASPIRASI - Menampilkan semua aspirasi (index)
-    // DATA ASPIRASI - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
+    // DATA ASPIRASI - Berdasarkan jabatan
     public function index(Request $request)
     {
         $guru = $this->getGuru();
 
-        if ($guru->canCreateAspirasi()) {
-            // GURU: hanya lihat aspirasi yang dia buat sendiri (belum selesai)
+        if ($guru->canCreateAspirasi() && !$guru->canManageAspirasi()) {
+            // GURU BIASA: hanya lihat aspirasi yang dia buat sendiri
             $query = Aspirasi::with(['kategori', 'ruangan'])
                 ->where('user_id', Auth::id())
                 ->where('status', '!=', 'Selesai');
+        } elseif ($guru->jabatan == 'Wali Kelas') {
+            // WALI KELAS: bisa lihat aspirasi sendiri dan aspirasi kelas
+            // Tentukan jenis tampilan berdasarkan parameter 'type'
+            $type = $request->get('type', 'kelas');
+
+            if ($type == 'saya') {
+                // Aspirasi yang dibuat Wali Kelas sendiri
+                $query = Aspirasi::with(['kategori', 'ruangan'])
+                    ->where('user_id', Auth::id())
+                    ->where('status', '!=', 'Selesai');
+            } else {
+                // Aspirasi dari kelas yang diampu
+                $kelasId = $guru->getKelasId();
+                if ($kelasId) {
+                    $query = Aspirasi::with(['user.siswa', 'kategori', 'ruangan'])
+                        ->where('status', '!=', 'Selesai')
+                        ->whereHas('user.siswa', function ($q) use ($kelasId) {
+                            $q->where('id_kelas', $kelasId);
+                        });
+                } else {
+                    $query = Aspirasi::whereRaw('1 = 0');
+                }
+            }
         } elseif ($guru->canViewAllAspirasi()) {
-            // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi (belum selesai)
+            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi
             $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
                 ->where('status', '!=', 'Selesai');
         } else {
-            $query = Aspirasi::whereRaw('1 = 0'); // Query kosong
+            $query = Aspirasi::whereRaw('1 = 0');
         }
 
-        // Filter berdasarkan status
+        // Filter (sama seperti sebelumnya)
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // Filter berdasarkan kategori
         if ($request->filled('kategori')) {
             $query->where('id_kategori', $request->kategori);
         }
-
-        // Filter berdasarkan ruangan
         if ($request->filled('ruangan')) {
             $query->where('id_ruangan', $request->ruangan);
         }
-
-        // Filter berdasarkan tanggal
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
-        // Pencarian
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('keterangan', 'like', '%' . $request->search . '%')
@@ -126,17 +155,18 @@ class AspirasiController extends Controller
 
         $kategoris = Kategori::all();
         $ruangans = Ruangan::all();
+        $currentType = $request->get('type', 'kelas');
 
-        return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris', 'ruangans'));
+        return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris', 'ruangans', 'currentType'));
     }
 
-    // Form buat aspirasi (khusus Guru)
+    // Form buat aspirasi (khusus Guru dan Wali Kelas)
     public function create()
     {
         $guru = $this->getGuru();
 
         if (!$guru->canCreateAspirasi()) {
-            abort(403, 'Hanya Guru yang dapat membuat aspirasi');
+            abort(403, 'Hanya Guru dan Wali Kelas yang dapat membuat aspirasi');
         }
 
         $kategoris = Kategori::all();
@@ -145,13 +175,13 @@ class AspirasiController extends Controller
         return view('guru.aspirasi.create', compact('guru', 'kategoris', 'ruangans'));
     }
 
-    // Store aspirasi (khusus Guru)
+    // Store aspirasi (khusus Guru dan Wali Kelas)
     public function store(Request $request)
     {
         $guru = $this->getGuru();
 
         if (!$guru->canCreateAspirasi()) {
-            return redirect()->back()->with('error', 'Hanya Guru yang dapat membuat aspirasi');
+            return redirect()->back()->with('error', 'Hanya Guru dan Wali Kelas yang dapat membuat aspirasi');
         }
 
         $request->validate([
@@ -303,38 +333,67 @@ class AspirasiController extends Controller
 
         return redirect()->back()->with('success', $message);
     }
-    // History
-    // History - Hanya menampilkan riwayat yang status_baru = Selesai
+    // History - Menampilkan riwayat perubahan status
     public function history(Request $request)
     {
         $guru = $this->getGuru();
 
-        if ($guru->canCreateAspirasi()) {
-            // GURU: hanya melihat history aspirasi yang dia buat sendiri (yang sudah selesai)
+        if ($guru->canCreateAspirasi() && !$guru->canManageAspirasi()) {
+            // GURU BIASA: hanya melihat history aspirasi yang dia buat sendiri
             $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
-                ->where('status_baru', 'Selesai') // HANYA yang statusnya menjadi Selesai
+                ->where('status_baru', 'Selesai')
                 ->whereHas('aspirasi', function ($q) {
                     $q->where('user_id', Auth::id());
                 });
-        } else {
-            // WALI KELAS, KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: melihat semua history yang selesai
+            $currentType = 'saya';
+        } elseif ($guru->jabatan == 'Wali Kelas') {
+            // WALI KELAS: bisa lihat history sendiri dan history kelas
+            $type = $request->get('type', 'kelas');
+            $currentType = $type;
+
+            if ($type == 'saya') {
+                // History aspirasi yang dibuat Wali Kelas sendiri
+                $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
+                    ->where('status_baru', 'Selesai')
+                    ->whereHas('aspirasi', function ($q) {
+                        $q->where('user_id', Auth::id());
+                    });
+            } else {
+                // History aspirasi dari kelas yang diampu
+                $kelasId = $guru->getKelasId();
+                if ($kelasId) {
+                    $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
+                        ->where('status_baru', 'Selesai')
+                        ->whereHas('aspirasi.user.siswa', function ($q) use ($kelasId) {
+                            $q->where('id_kelas', $kelasId);
+                        });
+                } else {
+                    $query = HistoryStatus::whereRaw('1 = 0');
+                }
+            }
+        } elseif ($guru->canViewAllAspirasi()) {
+            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: melihat semua history
             $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
-                ->where('status_baru', 'Selesai'); // HANYA yang statusnya menjadi Selesai
+                ->where('status_baru', 'Selesai');
+            $currentType = 'semua';
+        } else {
+            $query = HistoryStatus::whereRaw('1 = 0');
+            $currentType = 'semua';
         }
 
         // Filter berdasarkan tanggal
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $history = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('guru.history', compact('guru', 'history'));
+        return view('guru.history', compact('guru', 'history', 'currentType'));
     }
+
     // Statistik (Untuk Kepala Sekolah, Wakil, Kepala Jurusan)
     public function statistik()
     {

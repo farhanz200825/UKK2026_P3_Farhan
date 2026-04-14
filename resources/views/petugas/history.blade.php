@@ -36,13 +36,6 @@
                         </button>
                     </div>
                 </form>
-
-                <div class="alert alert-info">
-                    <i class="ph ph-info"></i> 
-                    Hanya aspirasi dengan status <strong>Selesai</strong> yang muncul di halaman ini.
-                    Aspirasi yang masih <strong>Menunggu</strong> atau <strong>Proses</strong> dapat dilihat di menu <strong>Data Aspirasi</strong>.
-                </div>
-
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover">
                         <thead class="table-light">

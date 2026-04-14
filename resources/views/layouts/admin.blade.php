@@ -205,55 +205,83 @@
                         </a>
                     </li>
 
-                    <!-- Menu untuk GURU (bisa membuat aspirasi) -->
-                    @if($guru->canCreateAspirasi())
+                    <!-- ==================== MENU UNTUK GURU BIASA ==================== -->
+                    @if($guru->jabatan == 'Guru')
                     <li class="pc-item {{ request()->routeIs('guru.aspirasi.create') ? 'active' : '' }}">
                         <a href="{{ route('guru.aspirasi.create') }}" class="pc-link">
                             <span class="pc-micon"><i class="ph ph-pencil-line"></i></span>
                             <span class="pc-mtext">Buat Aspirasi</span>
                         </a>
                     </li>
-                    @endif
-
-                    <!-- Menu Data Aspirasi untuk semua yang bisa melihat -->
-                    @if($guru->canViewAllAspirasi() || $guru->canCreateAspirasi())
                     <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
                         <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
                             <span class="pc-micon"><i class="ph ph-list"></i></span>
-                            <span class="pc-mtext">
-                                @if($guru->canCreateAspirasi())
-                                Daftar Aspirasi Saya
-                                @else
-                                Data Aspirasi
-                                @endif
-                            </span>
+                            <span class="pc-mtext">Data Aspirasi Saya</span>
+                        </a>
+                    </li>
+                    <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
+                        <a href="{{ route('guru.history') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">History Saya</span>
                         </a>
                     </li>
                     @endif
 
-                    <!-- Menu untuk KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN (statistik) -->
-                    @if($guru->canViewStatistik())
+                    <!-- ==================== MENU UNTUK WALI KELAS ==================== -->
+                    @if($guru->jabatan == 'Wali Kelas')
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.create') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.create') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-pencil-line"></i></span>
+                            <span class="pc-mtext">Buat Aspirasi</span>
+                        </a>
+                    </li>
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') && request('type') == 'kelas' ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.index', ['type' => 'kelas']) }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-users"></i></span>
+                            <span class="pc-mtext">Data Aspirasi Kelas</span>
+                        </a>
+                    </li>
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') && request('type') == 'saya' ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.index', ['type' => 'saya']) }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-user"></i></span>
+                            <span class="pc-mtext">Aspirasi Saya</span>
+                        </a>
+                    </li>
+                    <li class="pc-item {{ request()->routeIs('guru.history') && request('type') == 'kelas' ? 'active' : '' }}">
+                        <a href="{{ route('guru.history', ['type' => 'kelas']) }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
+                            <span class="pc-mtext">History Kelas</span>
+                        </a>
+                    </li>
+                    <li class="pc-item {{ request()->routeIs('guru.history') && request('type') == 'saya' ? 'active' : '' }}">
+                        <a href="{{ route('guru.history', ['type' => 'saya']) }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-user"></i></span>
+                            <span class="pc-mtext">History Saya</span>
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- ==================== MENU UNTUK KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN ==================== -->
+                    @if(in_array($guru->jabatan, ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Jurusan']))
+                    <li class="pc-item {{ request()->routeIs('guru.aspirasi.index') ? 'active' : '' }}">
+                        <a href="{{ route('guru.aspirasi.index') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ph ph-list"></i></span>
+                            <span class="pc-mtext">Data Aspirasi</span>
+                        </a>
+                    </li>
                     <li class="pc-item {{ request()->routeIs('guru.statistik') ? 'active' : '' }}">
                         <a href="{{ route('guru.statistik') }}" class="pc-link">
                             <span class="pc-micon"><i class="ph ph-chart-line"></i></span>
                             <span class="pc-mtext">Statistik</span>
                         </a>
                     </li>
-                    @endif
-
-                    <!-- Menu HISTORY -->
                     <li class="pc-item {{ request()->routeIs('guru.history') ? 'active' : '' }}">
                         <a href="{{ route('guru.history') }}" class="pc-link">
                             <span class="pc-micon"><i class="ph ph-clock-counter-clockwise"></i></span>
-                            <span class="pc-mtext">
-                                @if($guru->canCreateAspirasi())
-                                History Saya
-                                @else
-                                History Aspirasi
-                                @endif
-                            </span>
+                            <span class="pc-mtext">History Aspirasi</span>
                         </a>
                     </li>
+                    @endif
 
                     @endif
 

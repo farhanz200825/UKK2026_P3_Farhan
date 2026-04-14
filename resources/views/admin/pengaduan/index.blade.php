@@ -5,56 +5,12 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <!-- Statistik Cards -->
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['total'] }}</h3>
-                        <small>Total Aspirasi</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['menunggu'] }}</h3>
-                        <small>Menunggu</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['proses'] }}</h3>
-                        <small>Diproses</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['selesai'] }}</h3>
-                        <small>Selesai</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="ph ph-list"></i> Data Aspirasi Aktif</h5>
                 <small>Menampilkan aspirasi dengan status Menunggu dan Proses</small>
             </div>
             <div class="card-body">
-                <!-- Alert Info -->
-                <div class="alert alert-info mb-3">
-                    <i class="ph ph-info"></i> 
-                    <strong>Informasi:</strong> Halaman ini hanya menampilkan aspirasi dengan status 
-                    <strong>Menunggu</strong> dan <strong>Proses</strong>. 
-                    Aspirasi yang sudah <strong>Selesai</strong> dapat dilihat di menu 
-                    <strong>History</strong>.
-                </div>
                 
                 <!-- Filter -->
                 <form method="GET" class="row g-3 mb-4">

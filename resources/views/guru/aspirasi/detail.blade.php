@@ -40,38 +40,7 @@
                         <textarea name="feedback" class="form-control" rows="2" placeholder="Tulis feedback untuk siswa..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm">Kirim Feedback</button>
-                </form>
-                
-                <hr>
-                
-                <form action="{{ route('guru.aspirasi.progres', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
-                    @csrf
-                    <div class="mb-2">
-                        <label>Update Progres</label>
-                        <textarea name="keterangan_progres" class="form-control" rows="2" placeholder="Update progres penanganan..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-info btn-sm">Update Progres</button>
-                </form>
-                
-                <hr>
-                
-                <form action="{{ route('guru.aspirasi.status', $aspirasi->id_aspirasi) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="row">
-                        <div class="col-md-8">
-                            <label>Ubah Status</label>
-                            <select name="status" class="form-select">
-                                <option value="Menunggu" {{ $aspirasi->status == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
-                                <option value="Proses" {{ $aspirasi->status == 'Proses' ? 'selected' : '' }}>Diproses</option>
-                                <option value="Selesai" {{ $aspirasi->status == 'Selesai' ? 'selected' : '' }}>Selesai</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-warning w-100">Update Status</button>
-                        </div>
-                    </div>
-                </form>
+                </form> 
             </div>
         </div>
         @endif

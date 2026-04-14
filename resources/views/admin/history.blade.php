@@ -5,39 +5,12 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <!-- Statistik Cards -->
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['total'] }}</h3>
-                        <small>Total Aspirasi Selesai</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ $statistik['selesai'] }}</h3>
-                        <small>Selesai</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <div class="card">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0"><i class="ph ph-check-circle"></i> History Aspirasi Selesai</h5>
                 <small>Daftar aspirasi yang sudah selesai ditangani</small>
             </div>
             <div class="card-body">
-                <!-- Alert Info -->
-                <div class="alert alert-success mb-3">
-                    <i class="ph ph-check-circle"></i> 
-                    <strong>Informasi:</strong> Halaman ini menampilkan semua aspirasi yang sudah 
-                    <strong>Selesai</strong> ditangani.
-                </div>
-                
                 <!-- Filter -->
                 <form method="GET" class="row g-3 mb-4">
                     <div class="col-md-4">

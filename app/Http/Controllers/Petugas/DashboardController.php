@@ -100,7 +100,8 @@ class DashboardController extends Controller
     {
         $request->validate([
             'status' => 'required|in:Menunggu,Proses,Selesai',
-            'keterangan_progres' => 'nullable|string'
+            'keterangan_progres' => 'required_if:status,Selesai|nullable|string',
+            'foto_bukti' => 'required_if:status,Selesai|nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $aspirasi = Aspirasi::findOrFail($id);
@@ -118,21 +119,34 @@ class DashboardController extends Controller
         // Update status
         $aspirasi->update(['status' => $statusBaru]);
 
-        // Simpan progres jika ada keterangan
+        $fotoBuktiPath = null;
+        if ($request->hasFile('foto_bukti')) {
+            $fotoBuktiPath = $request->file('foto_bukti')->store('aspirasi_bukti', 'public');
+        }
+
+        // Simpan progres dengan link foto
         if ($request->filled('keterangan_progres')) {
+            $progresText = $request->keterangan_progres;
+            if ($fotoBuktiPath) {
+                $progresText .= "\n\n📎 Foto bukti: " . asset('storage/' . $fotoBuktiPath);
+            }
             Progres::create([
                 'id_aspirasi' => $id,
-                'user_id' => Auth::id(),
-                'keterangan_progres' => $request->keterangan_progres,
+                'user_id' => auth()->id(),
+                'keterangan_progres' => $progresText,
             ]);
         }
 
         // Jika status menjadi Selesai, tambahkan progres otomatis
         if ($statusBaru == 'Selesai') {
+            $selesaiText = 'Aspirasi telah selesai ditangani oleh Petugas ' . Auth::user()->petugas->nama;
+            if ($fotoBuktiPath) {
+                $selesaiText .= "\n\n📎 Foto bukti: " . asset('storage/' . $fotoBuktiPath);
+            }
             Progres::create([
                 'id_aspirasi' => $id,
                 'user_id' => Auth::id(),
-                'keterangan_progres' => 'Aspirasi telah selesai ditangani oleh Petugas ' . Auth::user()->petugas->nama,
+                'keterangan_progres' => $selesaiText,
             ]);
         }
 

@@ -163,42 +163,6 @@
                                 </button>
                             </div>
                         </form>
-                        
-                        <div class="login-info">
-                            <small class="text-muted d-block text-center mb-2">
-                                <i class="ph ph-info me-1"></i> Informasi Login:
-                            </small>
-                            <div class="row text-center small">
-                                <div class="col-6">
-                                    <span class="role-badge admin w-100">
-                                        <i class="ph ph-shield-check"></i> Admin: email
-                                    </span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="role-badge guru w-100">
-                                        <i class="ph ph-chalkboard-teacher"></i> Guru: NIP
-                                    </span>
-                                </div>
-                                <div class="col-6 mt-2">
-                                    <span class="role-badge siswa w-100">
-                                        <i class="ph ph-users"></i> Siswa: NIS
-                                    </span>
-                                </div>
-                                <div class="col-6 mt-2">
-                                    <span class="role-badge petugas w-100">
-                                        <i class="ph ph-user-switch"></i> Petugas: NIP
-                                    </span>
-                                </div>
-                            </div>
-                            <hr class="my-2">
-                            <small class="text-muted d-block text-center">
-                                Demo: <strong>admin@ukk2026.com</strong> / password<br>
-                                Guru: <strong>2317628317862</strong> / password<br>
-                                Siswa: <strong>2324102576</strong> / password<br>
-                                Petugas: <strong>27398273922</strong> / password
-                            </small>
-                        </div>
-                        
                         <hr class="my-3">
                     </div>
                 </div>
