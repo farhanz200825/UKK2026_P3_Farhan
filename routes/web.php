@@ -19,7 +19,7 @@ Route::post('/register', [LoginController::class, 'register'])->name('register')
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Dashboard redirect
-Route::get('/dashboard', function() {
+Route::get('/dashboard', function () {
     if (auth()->check()) {
         $role = auth()->user()->role;
         if ($role === 'admin') return redirect()->route('admin.dashboard');
@@ -34,52 +34,52 @@ Route::get('/dashboard', function() {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/users', [DashboardController::class, 'users'])->name('users');
-    
+
     // CRUD Admin
     Route::post('/admin/store', [DashboardController::class, 'storeAdmin'])->name('admin.store');
     Route::put('/admin/{id}', [DashboardController::class, 'updateAdmin'])->name('admin.update');
     Route::delete('/admin/{id}', [DashboardController::class, 'destroyAdmin'])->name('admin.destroy');
-    
+
     // CRUD Guru
     Route::post('/guru/store', [DashboardController::class, 'storeGuru'])->name('guru.store');
     Route::put('/guru/{id}', [DashboardController::class, 'updateGuru'])->name('guru.update');
     Route::delete('/guru/{id}', [DashboardController::class, 'destroyGuru'])->name('guru.destroy');
-    
+
     // CRUD Siswa
     Route::post('/siswa/store', [DashboardController::class, 'storeSiswa'])->name('siswa.store');
     Route::put('/siswa/{id}', [DashboardController::class, 'updateSiswa'])->name('siswa.update');
     Route::delete('/siswa/{id}', [DashboardController::class, 'destroySiswa'])->name('siswa.destroy');
-    
+
     // IMPORT SISWA
     Route::post('/siswa/import', [DashboardController::class, 'importSiswa'])->name('siswa.import');
     Route::get('/siswa/template', [DashboardController::class, 'downloadTemplateSiswa'])->name('siswa.template');
-    
+
     // CRUD Petugas
     Route::post('/petugas/store', [DashboardController::class, 'storePetugas'])->name('petugas.store');
     Route::put('/petugas/{id}', [DashboardController::class, 'updatePetugas'])->name('petugas.update');
     Route::delete('/petugas/{id}', [DashboardController::class, 'destroyPetugas'])->name('petugas.destroy');
-    
+
     // Master Data
     Route::get('/kategori', [DashboardController::class, 'kategori'])->name('kategori');
     Route::post('/kategori', [DashboardController::class, 'storeKategori'])->name('kategori.store');
     Route::put('/kategori/{id}', [DashboardController::class, 'updateKategori'])->name('kategori.update');
     Route::delete('/kategori/{id}', [DashboardController::class, 'destroyKategori'])->name('kategori.destroy');
-    
+
     // CRUD Jurusan
     Route::post('/jurusan', [DashboardController::class, 'storeJurusan'])->name('jurusan.store');
     Route::put('/jurusan/{id}', [DashboardController::class, 'updateJurusan'])->name('jurusan.update');
     Route::delete('/jurusan/{id}', [DashboardController::class, 'destroyJurusan'])->name('jurusan.destroy');
-    
+
     // CRUD Kelas
     Route::post('/kelas', [DashboardController::class, 'storeKelas'])->name('kelas.store');
     Route::put('/kelas/{id}', [DashboardController::class, 'updateKelas'])->name('kelas.update');
     Route::delete('/kelas/{id}', [DashboardController::class, 'destroyKelas'])->name('kelas.destroy');
-    
+
     // CRUD Ruangan
     Route::post('/ruangan', [DashboardController::class, 'storeRuangan'])->name('ruangan.store');
     Route::put('/ruangan/{id}', [DashboardController::class, 'updateRuangan'])->name('ruangan.update');
     Route::delete('/ruangan/{id}', [DashboardController::class, 'destroyRuangan'])->name('ruangan.destroy');
-    
+
     // Pengaduan/Aspirasi Management
     Route::get('/pengaduan', [DashboardController::class, 'pengaduan'])->name('pengaduan');
     Route::get('/pengaduan/{id}', [DashboardController::class, 'pengaduanDetail'])->name('pengaduan.detail');
@@ -87,12 +87,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/pengaduan/{id}/feedback', [DashboardController::class, 'storeFeedback'])->name('pengaduan.feedback');
     Route::post('/pengaduan/{id}/progres', [DashboardController::class, 'storeProgres'])->name('pengaduan.progres');
     Route::delete('/pengaduan/{id}', [DashboardController::class, 'destroyAspirasi'])->name('pengaduan.destroy');
-    
+
     // History
     Route::get('/history', [DashboardController::class, 'history'])->name('history');
-    
+
     // Sarana
-    Route::get('/sarana', function () { return view('admin.sarana.index'); })->name('sarana');
+    Route::get('/sarana', function () {
+        return view('admin.sarana.index');
+    })->name('sarana');
+
+    // Logs Activity
+    Route::get('/logs', [DashboardController::class, 'logs'])->name('logs');
 });
 
 // ==================== GURU ROUTES ====================

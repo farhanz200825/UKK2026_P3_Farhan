@@ -60,13 +60,25 @@ class DashboardController extends Controller
     public function users()
     {
         $admins = User::where('role', 'admin')->get();
-        $gurus = Guru::with('user')->get();
-        $siswas = Siswa::with('user')->get();
+        $gurus = Guru::with('user', 'kelas')->get();
+        $siswas = Siswa::with('user', 'kelasRelasi', 'jurusanRelasi')->get();
         $petugas = Petugas::with('user')->get();
-        $allKelas = Kelas::all();
+
+        // Ambil semua kelas
+        $allKelas = Kelas::with('jurusan')->get();
+
+        // Ambil ID kelas yang sudah memiliki Wali Kelas
+        $kelasTerpakai = Guru::where('jabatan', 'Wali Kelas')
+            ->whereNotNull('id_kelas')
+            ->pluck('id_kelas')
+            ->toArray();
+
+        // Kelas yang tersedia (belum ada wali kelas)
+        $kelasTersedia = Kelas::whereNotIn('id_kelas', $kelasTerpakai)->get();
+
         $allJurusan = Jurusan::all();
 
-        return view('admin.users.index', compact('admins', 'gurus', 'siswas', 'petugas', 'allKelas', 'allJurusan'));
+        return view('admin.users.index', compact('admins', 'gurus', 'siswas', 'petugas', 'allKelas', 'allJurusan', 'kelasTersedia', 'kelasTerpakai'));
     }
 
     // ==================== CRUD SISWA ====================
@@ -180,97 +192,124 @@ class DashboardController extends Controller
     }
 
     public function storeGuru(Request $request)
-{
-    $request->validate([
-        'nama' => 'required|string|max:100',
-        'nip' => 'nullable|unique:guru,nip',
-        'mata_pelajaran' => 'nullable|string|max:100',
-        'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
-        'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:6',
-        'jenis_kelamin' => 'required|in:L,P',
-        'tanggal_lahir' => 'nullable|date',
-        'alamat' => 'nullable|string',
-        'no_hp' => 'nullable|string|max:15',
-        'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
-    ]);
+    {
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:guru,nip',
+            'mata_pelajaran' => 'nullable|string|max:100',
+            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
+            'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
 
-    $user = User::create([
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => 'guru'
-    ]);
+        // Cek apakah kelas sudah memiliki Wali Kelas
+        if ($request->jabatan == 'Wali Kelas' && $request->id_kelas) {
+            $existingWaliKelas = Guru::where('jabatan', 'Wali Kelas')
+                ->where('id_kelas', $request->id_kelas)
+                ->exists();
 
-    $fotoPath = null;
-    if ($request->hasFile('foto')) {
-        $fotoPath = $request->file('foto')->store('foto_guru', 'public');
-    }
-
-    Guru::create([
-        'user_id' => $user->id,
-        'nip' => $request->nip,
-        'nama' => $request->nama,
-        'mata_pelajaran' => $request->mata_pelajaran,
-        'jabatan' => $request->jabatan,
-        'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
-        'jenis_kelamin' => $request->jenis_kelamin,
-        'tanggal_lahir' => $request->tanggal_lahir,
-        'alamat' => $request->alamat,
-        'no_hp' => $request->no_hp,
-        'foto' => $fotoPath
-    ]);
-
-    return redirect()->route('admin.users')->with('success', 'Guru berhasil ditambahkan');
-}
-
-public function updateGuru(Request $request, $id)
-{
-    $guru = Guru::findOrFail($id);
-
-    $request->validate([
-        'nama' => 'required|string|max:100',
-        'nip' => 'nullable|unique:guru,nip,' . $id,
-        'mata_pelajaran' => 'nullable|string|max:100',
-        'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
-        'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
-        'email' => 'required|email|unique:users,email,' . $guru->user_id,
-        'password' => 'nullable|min:6',
-        'jenis_kelamin' => 'required|in:L,P',
-        'tanggal_lahir' => 'nullable|date',
-        'alamat' => 'nullable|string',
-        'no_hp' => 'nullable|string|max:15',
-        'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
-    ]);
-
-    $userData = ['email' => $request->email];
-    if ($request->filled('password')) {
-        $userData['password'] = Hash::make($request->password);
-    }
-    $guru->user->update($userData);
-
-    if ($request->hasFile('foto')) {
-        if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
-            Storage::disk('public')->delete($guru->foto);
+            if ($existingWaliKelas) {
+                return redirect()->back()
+                    ->with('error', 'Kelas ini sudah memiliki Wali Kelas!')
+                    ->withInput();
+            }
         }
-        $fotoPath = $request->file('foto')->store('foto_guru', 'public');
-        $guru->foto = $fotoPath;
+
+        $user = User::create([
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'guru'
+        ]);
+
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
+        }
+
+        Guru::create([
+            'user_id' => $user->id,
+            'nip' => $request->nip,
+            'nama' => $request->nama,
+            'mata_pelajaran' => $request->mata_pelajaran,
+            'jabatan' => $request->jabatan,
+            'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+            'foto' => $fotoPath
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Guru berhasil ditambahkan');
     }
 
-    $guru->update([
-        'nip' => $request->nip,
-        'nama' => $request->nama,
-        'mata_pelajaran' => $request->mata_pelajaran,
-        'jabatan' => $request->jabatan,
-        'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
-        'jenis_kelamin' => $request->jenis_kelamin,
-        'tanggal_lahir' => $request->tanggal_lahir,
-        'alamat' => $request->alamat,
-        'no_hp' => $request->no_hp,
-    ]);
+    public function updateGuru(Request $request, $id)
+    {
+        $guru = Guru::findOrFail($id);
 
-    return redirect()->route('admin.users')->with('success', 'Guru berhasil diupdate');
-}
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'nip' => 'nullable|unique:guru,nip,' . $id,
+            'mata_pelajaran' => 'nullable|string|max:100',
+            'jabatan' => 'required|in:Guru,Kepala Sekolah,Wakil Kepala Sekolah,Wali Kelas,Kepala Jurusan',
+            'id_kelas' => 'required_if:jabatan,Wali Kelas|nullable|exists:kelas,id_kelas',
+            'email' => 'required|email|unique:users,email,' . $guru->user_id,
+            'password' => 'nullable|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        // Cek apakah kelas sudah memiliki Wali Kelas lain
+        if ($request->jabatan == 'Wali Kelas' && $request->id_kelas) {
+            $existingWaliKelas = Guru::where('jabatan', 'Wali Kelas')
+                ->where('id_kelas', $request->id_kelas)
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($existingWaliKelas) {
+                return redirect()->back()
+                    ->with('error', 'Kelas ini sudah memiliki Wali Kelas lain!')
+                    ->withInput();
+            }
+        }
+
+        $userData = ['email' => $request->email];
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        $guru->user->update($userData);
+
+        if ($request->hasFile('foto')) {
+            if ($guru->foto && Storage::disk('public')->exists($guru->foto)) {
+                Storage::disk('public')->delete($guru->foto);
+            }
+            $fotoPath = $request->file('foto')->store('foto_guru', 'public');
+            $guru->foto = $fotoPath;
+        }
+
+        $guru->update([
+            'nip' => $request->nip,
+            'nama' => $request->nama,
+            'mata_pelajaran' => $request->mata_pelajaran,
+            'jabatan' => $request->jabatan,
+            'id_kelas' => $request->jabatan == 'Wali Kelas' ? $request->id_kelas : null,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Guru berhasil diupdate');
+    }
 
     public function destroyGuru($id)
     {

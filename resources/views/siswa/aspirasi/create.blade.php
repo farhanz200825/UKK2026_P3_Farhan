@@ -18,6 +18,14 @@
                 </div>
                 @endif
                 
+                @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="ph ph-warning-circle me-2"></i>
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                @endif
+                
                 @if($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <ul class="mb-0">
@@ -29,13 +37,47 @@
                 </div>
                 @endif
                 
+                <!-- Informasi Kuota -->
+                @php
+                    $today = \Carbon\Carbon::now()->startOfDay();
+                    $countToday = \App\Models\Aspirasi::where('user_id', Auth::id())
+                        ->whereDate('created_at', '>=', $today)
+                        ->count();
+                    $sisaKuota = 3 - $countToday;
+                @endphp
+                
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="ph ph-info"></i> 
+                            <strong>Kuota Aspirasi Hari Ini</strong>
+                        </div>
+                        <div>
+                            <span class="badge bg-{{ $sisaKuota > 0 ? 'success' : 'danger' }} fs-6 p-2">
+                                {{ $sisaKuota }} / 3
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-{{ $sisaKuota > 0 ? 'success' : 'danger' }}" 
+                             style="width: {{ ($countToday / 3) * 100 }}%"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        @if($sisaKuota > 0)
+                            Anda masih dapat mengirim {{ $sisaKuota }} aspirasi lagi hari ini.
+                        @else
+                            Anda telah mencapai batas maksimal 3 aspirasi hari ini. Silakan coba lagi besok.
+                        @endif
+                    </small>
+                </div>
+                
                 <form method="POST" action="{{ route('siswa.aspirasi.store') }}" enctype="multipart/form-data">
                     @csrf
                     
                     <!-- Kategori -->
                     <div class="mb-3">
                         <label class="form-label">Kategori Aspirasi <span class="text-danger">*</span></label>
-                        <select name="id_kategori" class="form-select" id="kategoriSelect" required>
+                        <select name="id_kategori" class="form-select" id="kategoriSelect" required {{ $sisaKuota <= 0 ? 'disabled' : '' }}>
                             <option value="">-- Pilih Kategori --</option>
                             @foreach($kategoris as $kategori)
                                 <option value="{{ $kategori->id_kategori }}" 
@@ -48,18 +90,17 @@
                         <div id="kategoriDeskripsi" class="small text-muted mt-1"></div>
                     </div>
                     
-                    <!-- Lokasi (Dari Tabel Ruangan) -->
+                    <!-- Ruangan -->
                     <div class="mb-3">
-                        <label class="form-label">Lokasi Ruangan <span class="text-danger">*</span></label>
+                        <label class="form-label">Ruangan <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="ph ph-building"></i></span>
-                            <select name="id_ruangan" class="form-select" required>
+                            <select name="id_ruangan" class="form-select" required {{ $sisaKuota <= 0 ? 'disabled' : '' }}>
                                 <option value="">-- Pilih Ruangan --</option>
                                 @foreach($ruangans as $ruangan)
                                     <option value="{{ $ruangan->id_ruangan }}" 
                                             data-jenis="{{ $ruangan->jenis_ruangan }}"
                                             data-lokasi="{{ $ruangan->lokasi }}"
-                                            data-kondisi="{{ $ruangan->kondisi }}"
                                             {{ old('id_ruangan') == $ruangan->id_ruangan ? 'selected' : '' }}>
                                         {{ $ruangan->kode_ruangan }} - {{ $ruangan->nama_ruangan }} 
                                         ({{ $ruangan->jenis_ruangan }})
@@ -68,20 +109,20 @@
                             </select>
                         </div>
                         <div id="ruanganDetail" class="small text-muted mt-1"></div>
-                        <small class="text-muted">Pilih ruangan yang bermasalah dari daftar ruangan yang tersedia</small>
                     </div>
                     
                     <!-- Keterangan -->
                     <div class="mb-3">
                         <label class="form-label">Keterangan <span class="text-danger">*</span></label>
                         <textarea name="keterangan" class="form-control" rows="5" 
-                                  placeholder="Jelaskan secara detail kondisi sarana yang bermasalah..." required>{{ old('keterangan') }}</textarea>
+                                  placeholder="Jelaskan secara detail kondisi sarana yang bermasalah..." 
+                                  required {{ $sisaKuota <= 0 ? 'disabled' : '' }}>{{ old('keterangan') }}</textarea>
                     </div>
                     
-                    <!-- Foto (Opsional) -->
+                    <!-- Foto -->
                     <div class="mb-3">
                         <label class="form-label">Foto (Opsional)</label>
-                        <input type="file" name="foto" class="form-control" accept="image/jpeg,image/png,image/jpg" id="fotoInput">
+                        <input type="file" name="foto" class="form-control" accept="image/jpeg,image/png,image/jpg" id="fotoInput" {{ $sisaKuota <= 0 ? 'disabled' : '' }}>
                         <small class="text-muted">Upload foto bukti (max 2MB, format: JPG, PNG)</small>
                         <div id="imagePreview" class="mt-2" style="display: none;">
                             <img id="previewImg" src="#" alt="Preview" style="max-width: 100%; border-radius: 8px;">
@@ -91,9 +132,9 @@
                     <div class="alert alert-info">
                         <i class="ph ph-info"></i> <strong>Informasi:</strong>
                         <ul class="mb-0 mt-1">
-                            <li>Setelah dikirim, aspirasi akan masuk ke admin/guru/petugas untuk ditindaklanjuti</li>
+                            <li>Setiap siswa maksimal <strong>3 kali</strong> mengirim aspirasi dalam 1 hari</li>
+                            <li>Setelah dikirim, aspirasi akan masuk ke admin/petugas untuk ditindaklanjuti</li>
                             <li>Status aspirasi dapat dilihat di menu "Status Aspirasi"</li>
-                            <li>Anda akan mendapatkan feedback dari petugas melalui menu "Feedback"</li>
                         </ul>
                     </div>
                     
@@ -101,7 +142,7 @@
                         <a href="{{ route('siswa.dashboard') }}" class="btn btn-secondary">
                             <i class="ph ph-arrow-left"></i> Kembali
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" {{ $sisaKuota <= 0 ? 'disabled' : '' }}>
                             <i class="ph ph-paper-plane"></i> Kirim Aspirasi
                         </button>
                     </div>
@@ -145,8 +186,10 @@
         }
     }
     
-    kategoriSelect.addEventListener('change', showKategoriDeskripsi);
-    showKategoriDeskripsi();
+    if (kategoriSelect) {
+        kategoriSelect.addEventListener('change', showKategoriDeskripsi);
+        showKategoriDeskripsi();
+    }
     
     // Tampilkan detail ruangan
     const ruanganSelect = document.querySelector('select[name="id_ruangan"]');
@@ -157,24 +200,15 @@
         if (selectedOption && ruanganSelect.value) {
             const jenis = selectedOption.getAttribute('data-jenis');
             const lokasi = selectedOption.getAttribute('data-lokasi');
-            const kondisi = selectedOption.getAttribute('data-kondisi');
-            
-            let kondisiBadge = '';
-            if (kondisi === 'Baik') kondisiBadge = '<span class="badge bg-success">Baik</span>';
-            else if (kondisi === 'Rusak Ringan') kondisiBadge = '<span class="badge bg-warning">Rusak Ringan</span>';
-            else if (kondisi === 'Rusak Berat') kondisiBadge = '<span class="badge bg-danger">Rusak Berat</span>';
-            else if (kondisi === 'Dalam Perbaikan') kondisiBadge = '<span class="badge bg-info">Dalam Perbaikan</span>';
-            
-            ruanganDetail.innerHTML = '<i class="ph ph-info"></i> ' +
-                '<strong>Jenis:</strong> ' + jenis + ' | ' +
-                '<strong>Lokasi:</strong> ' + (lokasi || '-') + ' | ' +
-                '<strong>Kondisi:</strong> ' + kondisiBadge;
+            ruanganDetail.innerHTML = '<i class="ph ph-info"></i> <strong>Jenis:</strong> ' + jenis + ' | <strong>Lokasi:</strong> ' + (lokasi || '-');
         } else {
             ruanganDetail.innerHTML = '';
         }
     }
     
-    ruanganSelect.addEventListener('change', showRuanganDetail);
-    showRuanganDetail();
+    if (ruanganSelect) {
+        ruanganSelect.addEventListener('change', showRuanganDetail);
+        showRuanganDetail();
+    }
 </script>
 @endpush

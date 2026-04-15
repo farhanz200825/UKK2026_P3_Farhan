@@ -201,19 +201,8 @@
                             <label class="form-label">Konfirmasi Password Baru</label>
                             <input type="password" name="password_confirmation" class="form-control" placeholder="Konfirmasi password baru">
                         </div>
-                    </div>
-                    
-                    <hr>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Theme</label>
-                        <select id="themeSelect" class="form-select">
-                            <option value="light">Light Mode</option>
-                            <option value="dark">Dark Mode</option>
-                            <option value="default">Default</option>
-                        </select>
-                    </div>
-                    
+                    </div>     
+                    <hr>        
                     <div class="text-end">
                         <button type="submit" class="btn btn-primary">
                             <i class="ph ph-save"></i> Simpan Perubahan

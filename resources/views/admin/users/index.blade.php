@@ -132,9 +132,9 @@
                                         </td>
                                         <td>
                                             @if($guru->jabatan == 'Wali Kelas' && $guru->kelas)
-                                                <span class="badge bg-info">{{ $guru->kelas->nama_kelas }}</span>
+                                            <span class="badge bg-info">{{ $guru->kelas->nama_kelas }}</span>
                                             @else
-                                                <span class="text-muted">-</span>
+                                            <span class="text-muted">-</span>
                                             @endif
                                         </td>
                                         <td>{{ $guru->user->email ?? '-' }}</td>
@@ -269,7 +269,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                    <td colspan="8" class="text-center">Belum ada data petugas</td>
+                                        <td colspan="8" class="text-center">Belum ada data petugas</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -327,13 +327,16 @@
                         </div>
                         <div class="col-md-6 mb-3" id="kelasFieldCreate" style="display: none;">
                             <label class="form-label">Kelas yang Diampu <span class="text-danger">*</span></label>
-                            <select name="id_kelas" class="form-select">
+                            <select name="id_kelas" class="form-select" id="kelasSelectCreate">
                                 <option value="">Pilih Kelas</option>
-                                @foreach($allKelas as $kelas)
+                                @foreach($kelasTersedia as $kelas)
                                 <option value="{{ $kelas->id_kelas }}">{{ $kelas->nama_kelas }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted">Kelas yang menjadi tanggung jawab sebagai Wali Kelas</small>
+                            <div id="kelasWarningCreate" class="text-warning small mt-1" style="display: none;">
+                                <i class="ph ph-warning"></i> Kelas ini sudah memiliki Wali Kelas!
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3"><label>Jenis Kelamin <span class="text-danger">*</span></label>
                             <select name="jenis_kelamin" class="form-select" required>
@@ -446,10 +449,16 @@
                     <div class="row">
                         <div class="col-md-6 mb-3"><label>NIP</label><input type="text" name="nip" class="form-control"></div>
                         <div class="col-md-6 mb-3"><label>Nama</label><input type="text" name="nama" class="form-control" required></div>
-                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select></div>
                         <div class="col-md-6 mb-3"><label>Tanggal Lahir</label><input type="date" name="tanggal_lahir" class="form-control"></div>
                         <div class="col-md-6 mb-3"><label>No HP</label><input type="text" name="no_hp" class="form-control"></div>
-                        <div class="col-md-6 mb-3"><label>Status</label><select name="status" class="form-select" required><option value="Aktif">Aktif</option><option value="Tidak Aktif">Tidak Aktif</option></select></div>
+                        <div class="col-md-6 mb-3"><label>Status</label><select name="status" class="form-select" required>
+                                <option value="Aktif">Aktif</option>
+                                <option value="Tidak Aktif">Tidak Aktif</option>
+                            </select></div>
                         <div class="col-md-6 mb-3"><label>Email</label><input type="email" name="email" class="form-control" required></div>
                         <div class="col-md-6 mb-3"><label>Password</label><input type="password" name="password" class="form-control" required></div>
                         <div class="col-md-6 mb-3"><label>Foto</label><input type="file" name="foto" class="form-control" accept="image/*"></div>
@@ -467,7 +476,9 @@
 <div class="modal fade" id="editAdminModal{{ $admin->id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-warning"><h5 class="modal-title">Edit Admin</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Edit Admin</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <form action="{{ route('admin.admin.update', $admin->id) }}" method="POST">@csrf @method('PUT')
                 <div class="modal-body">
                     <div class="mb-3"><label>Email</label><input type="email" name="email" class="form-control" value="{{ $admin->email }}" required></div>
@@ -481,9 +492,15 @@
 <div class="modal fade" id="deleteAdminModal{{ $admin->id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white"><h5 class="modal-title">Hapus Admin</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body text-center"><p>Yakin hapus admin <strong>{{ $admin->email }}</strong>?</p></div>
-            <div class="modal-footer"><form action="{{ route('admin.admin.destroy', $admin->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form></div>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Hapus Admin</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Yakin hapus admin <strong>{{ $admin->email }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ route('admin.admin.destroy', $admin->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form>
+            </div>
         </div>
     </div>
 </div>
@@ -519,6 +536,8 @@
     </div>
 </div>
 
+<!-- ==================== MODAL EDIT GURU ==================== -->
+@foreach($gurus as $guru)
 <div class="modal fade" id="editGuruModal{{ $guru->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -543,13 +562,28 @@
                         </div>
                         <div class="col-md-6 mb-3" id="kelasFieldEdit{{ $guru->id }}" style="display: {{ $guru->jabatan == 'Wali Kelas' ? 'block' : 'none' }};">
                             <label class="form-label">Kelas yang Diampu</label>
-                            <select name="id_kelas" class="form-select">
+                            <select name="id_kelas" class="form-select" id="kelasSelectEdit{{ $guru->id }}">
                                 <option value="">Pilih Kelas</option>
+                                @php
+                                    // Kelas yang tersedia (belum dipakai wali kelas lain) + kelas milik sendiri
+                                    $kelasTerpakaiLain = \App\Models\Guru::where('jabatan', 'Wali Kelas')
+                                        ->where('id', '!=', $guru->id)
+                                        ->whereNotNull('id_kelas')
+                                        ->pluck('id_kelas')
+                                        ->toArray();
+                                @endphp
                                 @foreach($allKelas as $kelas)
-                                <option value="{{ $kelas->id_kelas }}" {{ $guru->id_kelas == $kelas->id_kelas ? 'selected' : '' }}>{{ $kelas->nama_kelas }}</option>
+                                    @if(!in_array($kelas->id_kelas, $kelasTerpakaiLain) || $guru->id_kelas == $kelas->id_kelas)
+                                    <option value="{{ $kelas->id_kelas }}" {{ $guru->id_kelas == $kelas->id_kelas ? 'selected' : '' }}>
+                                        {{ $kelas->nama_kelas }}
+                                    </option>
+                                    @endif
                                 @endforeach
                             </select>
                             <small class="text-muted">Kelas yang menjadi tanggung jawab sebagai Wali Kelas</small>
+                            <div id="kelasWarningEdit{{ $guru->id }}" class="text-warning small mt-1" style="display: none;">
+                                <i class="ph ph-warning"></i> Kelas ini sudah memiliki Wali Kelas lain!
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3"><label>Jenis Kelamin</label>
                             <select name="jenis_kelamin" class="form-select" required>
@@ -573,13 +607,20 @@
         </div>
     </div>
 </div>
+@endforeach
 
 <div class="modal fade" id="deleteGuruModal{{ $guru->id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white"><h5 class="modal-title">Hapus Guru</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body text-center"><p>Yakin hapus guru <strong>{{ $guru->nama }}</strong>?</p></div>
-            <div class="modal-footer"><form action="{{ route('admin.guru.destroy', $guru->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form></div>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Hapus Guru</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Yakin hapus guru <strong>{{ $guru->nama }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ route('admin.guru.destroy', $guru->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form>
+            </div>
         </div>
     </div>
 </div>
@@ -590,7 +631,9 @@
 <div class="modal fade" id="viewSiswaModal{{ $siswa->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white"><h5 class="modal-title">Detail Siswa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Detail Siswa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <p><strong>NIS:</strong> {{ $siswa->nis ?? '-' }}</p>
                 <p><strong>Nama:</strong> {{ $siswa->nama }}</p>
@@ -606,7 +649,9 @@
 <div class="modal fade" id="editSiswaModal{{ $siswa->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-warning"><h5 class="modal-title">Edit Siswa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Edit Siswa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <form action="{{ route('admin.siswa.update', $siswa->id) }}" method="POST" enctype="multipart/form-data">@csrf @method('PUT')
                 <div class="modal-body">
                     <div class="row">
@@ -624,7 +669,10 @@
                                 <option value="{{ $jurusan->id_jurusan }}" {{ $siswa->id_jurusan == $jurusan->id_jurusan ? 'selected' : '' }}>{{ $jurusan->kode_jurusan }} - {{ $jurusan->nama_jurusan }}</option>
                                 @endforeach
                             </select></div>
-                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required><option value="L" {{ $siswa->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option><option value="P" {{ $siswa->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option></select></div>
+                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required>
+                                <option value="L" {{ $siswa->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option>
+                                <option value="P" {{ $siswa->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option>
+                            </select></div>
                         <div class="col-md-6 mb-3"><label>Tanggal Lahir</label><input type="date" name="tanggal_lahir" class="form-control" value="{{ $siswa->tanggal_lahir ? date('Y-m-d', strtotime($siswa->tanggal_lahir)) : '' }}"></div>
                         <div class="col-md-6 mb-3"><label>No HP</label><input type="text" name="no_hp" class="form-control" value="{{ $siswa->no_hp }}"></div>
                         <div class="col-md-6 mb-3"><label>Email</label><input type="email" name="email" class="form-control" value="{{ $siswa->user->email }}" required></div>
@@ -642,9 +690,15 @@
 <div class="modal fade" id="deleteSiswaModal{{ $siswa->id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white"><h5 class="modal-title">Hapus Siswa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body text-center"><p>Yakin hapus siswa <strong>{{ $siswa->nama }}</strong>?</p></div>
-            <div class="modal-footer"><form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form></div>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Hapus Siswa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Yakin hapus siswa <strong>{{ $siswa->nama }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ route('admin.siswa.destroy', $siswa->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form>
+            </div>
         </div>
     </div>
 </div>
@@ -655,7 +709,9 @@
 <div class="modal fade" id="viewPetugasModal{{ $p->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white"><h5 class="modal-title">Detail Petugas</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Detail Petugas</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <p><strong>NIP:</strong> {{ $p->nip ?? '-' }}</p>
                 <p><strong>Nama:</strong> {{ $p->nama }}</p>
@@ -670,16 +726,24 @@
 <div class="modal fade" id="editPetugasModal{{ $p->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-warning"><h5 class="modal-title">Edit Petugas</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Edit Petugas</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <form action="{{ route('admin.petugas.update', $p->id) }}" method="POST" enctype="multipart/form-data">@csrf @method('PUT')
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3"><label>NIP</label><input type="text" name="nip" class="form-control" value="{{ $p->nip }}"></div>
                         <div class="col-md-6 mb-3"><label>Nama</label><input type="text" name="nama" class="form-control" value="{{ $p->nama }}" required></div>
-                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required><option value="L" {{ $p->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option><option value="P" {{ $p->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option></select></div>
+                        <div class="col-md-6 mb-3"><label>Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required>
+                                <option value="L" {{ $p->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option>
+                                <option value="P" {{ $p->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option>
+                            </select></div>
                         <div class="col-md-6 mb-3"><label>Tanggal Lahir</label><input type="date" name="tanggal_lahir" class="form-control" value="{{ $p->tanggal_lahir ? date('Y-m-d', strtotime($p->tanggal_lahir)) : '' }}"></div>
                         <div class="col-md-6 mb-3"><label>No HP</label><input type="text" name="no_hp" class="form-control" value="{{ $p->no_hp }}"></div>
-                        <div class="col-md-6 mb-3"><label>Status</label><select name="status" class="form-select" required><option value="Aktif" {{ $p->status == 'Aktif' ? 'selected' : '' }}>Aktif</option><option value="Tidak Aktif" {{ $p->status == 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option></select></div>
+                        <div class="col-md-6 mb-3"><label>Status</label><select name="status" class="form-select" required>
+                                <option value="Aktif" {{ $p->status == 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                                <option value="Tidak Aktif" {{ $p->status == 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                            </select></div>
                         <div class="col-md-6 mb-3"><label>Email</label><input type="email" name="email" class="form-control" value="{{ $p->user->email }}" required></div>
                         <div class="col-md-6 mb-3"><label>Password</label><input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diubah"></div>
                         <div class="col-md-6 mb-3"><label>Foto</label><input type="file" name="foto" class="form-control" accept="image/*"></div>
@@ -695,9 +759,15 @@
 <div class="modal fade" id="deletePetugasModal{{ $p->id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white"><h5 class="modal-title">Hapus Petugas</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body text-center"><p>Yakin hapus petugas <strong>{{ $p->nama }}</strong>?</p></div>
-            <div class="modal-footer"><form action="{{ route('admin.petugas.destroy', $p->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form></div>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Hapus Petugas</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Yakin hapus petugas <strong>{{ $p->nama }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ route('admin.petugas.destroy', $p->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form>
+            </div>
         </div>
     </div>
 </div>
@@ -708,35 +778,46 @@
     // Untuk Create Modal
     const jabatanSelectCreate = document.getElementById('jabatanSelectCreate');
     const kelasFieldCreate = document.getElementById('kelasFieldCreate');
-    
+
     if (jabatanSelectCreate) {
         jabatanSelectCreate.addEventListener('change', function() {
             if (this.value === 'Wali Kelas') {
                 kelasFieldCreate.style.display = 'block';
+                // Set required attribute pada select kelas
+                document.querySelector('#kelasFieldCreate select').required = true;
             } else {
                 kelasFieldCreate.style.display = 'none';
+                document.querySelector('#kelasFieldCreate select').required = false;
             }
         });
         // Trigger on load
         if (jabatanSelectCreate.value === 'Wali Kelas') {
             kelasFieldCreate.style.display = 'block';
+            document.querySelector('#kelasFieldCreate select').required = true;
         }
     }
-    
+
     // Untuk setiap Edit Modal
     @foreach($gurus as $guru)
-    const jabatanSelectEdit{{ $guru->id }} = document.getElementById('jabatanSelectEdit{{ $guru->id }}');
-    const kelasFieldEdit{{ $guru->id }} = document.getElementById('kelasFieldEdit{{ $guru->id }}');
-    
-    if (jabatanSelectEdit{{ $guru->id }}) {
-        jabatanSelectEdit{{ $guru->id }}.addEventListener('change', function() {
-            if (this.value === 'Wali Kelas') {
-                kelasFieldEdit{{ $guru->id }}.style.display = 'block';
-            } else {
-                kelasFieldEdit{{ $guru->id }}.style.display = 'none';
-            }
-        });
-    }
+    (function() {
+        const jabatanSelect = document.getElementById('jabatanSelectEdit{{ $guru->id }}');
+        const kelasField = document.getElementById('kelasFieldEdit{{ $guru->id }}');
+        
+        if (jabatanSelect) {
+            jabatanSelect.addEventListener('change', function() {
+                if (this.value === 'Wali Kelas') {
+                    kelasField.style.display = 'block';
+                    // Set required attribute pada select kelas
+                    const kelasSelect = kelasField.querySelector('select');
+                    if (kelasSelect) kelasSelect.required = true;
+                } else {
+                    kelasField.style.display = 'none';
+                    const kelasSelect = kelasField.querySelector('select');
+                    if (kelasSelect) kelasSelect.required = false;
+                }
+            });
+        }
+    })();
     @endforeach
 </script>
 

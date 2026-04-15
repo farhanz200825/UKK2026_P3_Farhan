@@ -17,7 +17,7 @@ class AspirasiController extends Controller
     {
         $kategoris = Kategori::all();
         $ruangans = Ruangan::orderBy('nama_ruangan')->get();
-        
+
         return view('siswa.aspirasi.create', compact('kategoris', 'ruangans'));
     }
 
@@ -29,6 +29,19 @@ class AspirasiController extends Controller
             'keterangan' => 'required|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        // Cek jumlah aspirasi hari ini
+        $today = now()->startOfDay();
+        $countToday = Aspirasi::where('user_id', Auth::id())
+            ->whereDate('created_at', '>=', $today)
+            ->count();
+
+        // Batasan maksimal 3 kali dalam 1 hari
+        if ($countToday >= 3) {
+            return redirect()->back()
+                ->with('error', 'Anda telah mencapai batas maksimal 3 aspirasi dalam 1 hari. Silakan coba lagi besok.')
+                ->withInput();
+        }
 
         $ruangan = Ruangan::find($request->id_ruangan);
         $lokasi = $ruangan->nama_ruangan . ' (' . $ruangan->kode_ruangan . ')';
@@ -48,8 +61,11 @@ class AspirasiController extends Controller
             'status' => 'Menunggu'
         ]);
 
+        // Hitung sisa kuota
+        $sisaKuota = 3 - ($countToday + 1);
+
         return redirect()->route('siswa.aspirasi.index')
-            ->with('success', 'Aspirasi berhasil dikirim');
+            ->with('success', "Aspirasi berhasil dikirim! Sisa kuota hari ini: {$sisaKuota} aspirasi lagi.");
     }
 
     public function index()
@@ -58,7 +74,7 @@ class AspirasiController extends Controller
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-        
+
         return view('siswa.aspirasi.index', compact('aspirasi'));
     }
 
@@ -67,7 +83,7 @@ class AspirasiController extends Controller
         $aspirasi = Aspirasi::with(['kategori', 'ruangan', 'progres.user', 'historyStatus.pengubah'])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
-        
+
         return view('siswa.aspirasi.detail', compact('aspirasi'));
     }
 
@@ -79,13 +95,13 @@ class AspirasiController extends Controller
             ->orderByRaw("FIELD(status, 'Proses', 'Menunggu')")
             ->orderBy('created_at', 'desc')
             ->get();
-        
+
         $statistik = [
             'total' => $aspirasi->count(),
             'menunggu' => $aspirasi->where('status', 'Menunggu')->count(),
             'proses' => $aspirasi->where('status', 'Proses')->count(),
         ];
-        
+
         return view('siswa.aspirasi.status', compact('aspirasi', 'statistik'));
     }
 
@@ -96,7 +112,7 @@ class AspirasiController extends Controller
             ->where('status', 'Selesai')
             ->orderBy('updated_at', 'desc')
             ->get();
-        
+
         return view('siswa.aspirasi.history', compact('aspirasiSelesai'));
     }
 
@@ -105,17 +121,17 @@ class AspirasiController extends Controller
         $request->validate([
             'feedback' => 'required|string|min:3'
         ]);
-        
+
         $aspirasi = Aspirasi::where('user_id', Auth::id())
             ->where('status', '!=', 'Selesai')
             ->findOrFail($id);
-        
+
         Progres::create([
             'id_aspirasi' => $id,
             'user_id' => Auth::id(),
             'keterangan_progres' => 'Feedback dari siswa: ' . $request->feedback,
         ]);
-        
+
         return redirect()->route('siswa.aspirasi.detail', $id)
             ->with('success', 'Feedback berhasil dikirim');
     }
