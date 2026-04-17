@@ -403,6 +403,7 @@ class AspirasiController extends Controller
             return redirect()->route('guru.aspirasi.index')->with('error', 'Anda tidak memiliki akses ke halaman statistik');
         }
 
+        // Data untuk grafik bulanan (6 bulan terakhir)
         $bulanLabels = [];
         $bulanData = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -413,13 +414,22 @@ class AspirasiController extends Controller
                 ->count();
         }
 
+        // Statistik per kategori
         $kategoriStat = Kategori::withCount('aspirasi')->get();
+
+        // Statistik per ruangan
         $ruanganStat = Ruangan::withCount('aspirasi')->get();
+
+        // Statistik per status
         $statusStat = [
             'Menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
             'Proses' => Aspirasi::where('status', 'Proses')->count(),
             'Selesai' => Aspirasi::where('status', 'Selesai')->count(),
         ];
+
+        // Debug: cek data ke log
+        \Log::info('Statistik - Bulan Labels:', $bulanLabels);
+        \Log::info('Statistik - Bulan Data:', $bulanData);
 
         return view('guru.statistik', compact('guru', 'bulanLabels', 'bulanData', 'kategoriStat', 'ruanganStat', 'statusStat'));
     }

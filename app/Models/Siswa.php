@@ -24,7 +24,17 @@ class Siswa extends Model
         'no_hp',
         'foto',
         'id_kelas',
-        'id_jurusan'
+        'id_jurusan',
+        'token',
+        'pin',
+        'pin_verified_at'
+    ];
+    
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'pin_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
     
     public function user()
@@ -40,5 +50,29 @@ class Siswa extends Model
     public function jurusanRelasi()
     {
         return $this->belongsTo(Jurusan::class, 'id_jurusan');
+    }
+    
+    // Verifikasi token
+    public function verifyToken($token)
+    {
+        if ($this->token && \Hash::check($token, $this->token)) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Verifikasi PIN
+    public function verifyPin($pin)
+    {
+        if ($this->pin && \Hash::check($pin, $this->pin)) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Cek apakah PIN sudah dibuat
+    public function hasPin()
+    {
+        return !is_null($this->pin);
     }
 }

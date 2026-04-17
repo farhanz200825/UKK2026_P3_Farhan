@@ -17,36 +17,52 @@
                         <i class="ph ph-check-circle ph-2x me-3"></i>
                         <div>
                             <strong>🎉 Aspirasi Anda Telah Selesai!</strong><br>
-                            Terima kasih atas aspirasi yang telah disampaikan. 
+                            Terima kasih atas aspirasi yang telah disampaikan.
                             Aspirasi Anda telah selesai ditangani pada <strong>{{ $aspirasi->updated_at->format('d/m/Y H:i:s') }}</strong>.
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 @endif
-                
+
                 <table class="table table-bordered">
-                    <tr><th width="30%">Kategori</th><td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td></tr>
-                    <tr><th>Ruangan</th><td>{{ $aspirasi->ruangan->nama_ruangan ?? $aspirasi->lokasi }}</td></tr>
-                    <tr><th>Keterangan</th><td>{{ $aspirasi->keterangan }}</td></tr>
+                    <tr>
+                        <th width="30%">Kategori</th>
+                        <td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ruangan</th>
+                        <td>{{ $aspirasi->ruangan->nama_ruangan ?? $aspirasi->lokasi }}</td>
+                    </tr>
+                    <tr>
+                        <th width="30%">Saksi</th>
+                        <td>{{ $aspirasi->saksi->nama ?? '-' }} ({{ $aspirasi->saksi->nis ?? '-' }})</td>
+                    </tr>
+                    <tr>
+                        <th>Keterangan</th>
+                        <td>{{ $aspirasi->keterangan }}</td>
+                    </tr>
                     @if($aspirasi->foto)
-                    <tr><th>Foto Awal</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td></tr>
+                    <tr>
+                        <th>Foto Awal</th>
+                        <td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td>
+                    </tr>
                     @endif
-                    
+
                     <!-- TAMPILKAN FOTO BUKTI SELESAI -->
                     @php
-                        $fotoBukti = null;
-                        foreach($aspirasi->progres as $progres) {
-                            if(str_contains($progres->keterangan_progres, '📎 Foto bukti:')) {
-                                preg_match('/📎 Foto bukti: (.*)/', $progres->keterangan_progres, $matches);
-                                if(isset($matches[1])) {
-                                    $fotoBukti = $matches[1];
-                                    break;
-                                }
-                            }
-                        }
+                    $fotoBukti = null;
+                    foreach($aspirasi->progres as $progres) {
+                    if(str_contains($progres->keterangan_progres, '📎 Foto bukti:')) {
+                    preg_match('/📎 Foto bukti: (.*)/', $progres->keterangan_progres, $matches);
+                    if(isset($matches[1])) {
+                    $fotoBukti = $matches[1];
+                    break;
+                    }
+                    }
+                    }
                     @endphp
-                    
+
                     @if($fotoBukti)
                     <tr>
                         <th>Foto Bukti Selesai</th>
@@ -57,7 +73,7 @@
                         </td>
                     </tr>
                     @endif
-                    
+
                     <tr>
                         <th>Status</th>
                         <td>
@@ -66,7 +82,10 @@
                             </span>
                         </td>
                     </tr>
-                    <tr><th>Dibuat Pada</th><td>{{ $aspirasi->created_at->format('d/m/Y H:i:s') }}</td></tr>
+                    <tr>
+                        <th>Dibuat Pada</th>
+                        <td>{{ $aspirasi->created_at->format('d/m/Y H:i:s') }}</td>
+                    </tr>
                     @if($aspirasi->status == 'Selesai')
                     <tr>
                         <th>Selesai Pada</th>
@@ -145,7 +164,7 @@
                 @endforelse
             </div>
         </div>
-        
+
         <!-- Card Informasi -->
         <div class="card mt-3">
             <div class="card-header bg-light">

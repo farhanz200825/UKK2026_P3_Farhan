@@ -9,26 +9,26 @@
                 <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs" id="masterDataTab" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="kategori-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#kategori" type="button" role="tab">
+                            <button class="nav-link active" id="kategori-tab" data-bs-toggle="tab"
+                                data-bs-target="#kategori" type="button" role="tab">
                                 <i class="ph ph-tag"></i> Kategori
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="jurusan-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#jurusan" type="button" role="tab">
+                            <button class="nav-link" id="jurusan-tab" data-bs-toggle="tab"
+                                data-bs-target="#jurusan" type="button" role="tab">
                                 <i class="ph ph-book"></i> Jurusan
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="kelas-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#kelas" type="button" role="tab">
+                            <button class="nav-link" id="kelas-tab" data-bs-toggle="tab"
+                                data-bs-target="#kelas" type="button" role="tab">
                                 <i class="ph ph-users"></i> Kelas
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="ruangan-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#ruangan" type="button" role="tab">
+                            <button class="nav-link" id="ruangan-tab" data-bs-toggle="tab"
+                                data-bs-target="#ruangan" type="button" role="tab">
                                 <i class="ph ph-building"></i> Ruangan
                             </button>
                         </li>
@@ -36,7 +36,7 @@
                 </div>
                 <div class="card-body">
                     <div class="tab-content" id="masterDataTabContent">
-                        
+
                         <!-- ==================== TAB KATEGORI ==================== -->
                         <div class="tab-pane fade show active" id="kategori" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -66,16 +66,16 @@
                                                 <span class="badge bg-info">{{ $kategori->aspirasi_count ?? 0 }}</span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#viewKategoriModal{{ $kategori->id_kategori }}">
+                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#viewKategoriModal{{ $kategori->id_kategori }}">
                                                     <i class="ph ph-eye"></i> Detail
                                                 </button>
-                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#editKategoriModal{{ $kategori->id_kategori }}">
+                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#editKategoriModal{{ $kategori->id_kategori }}">
                                                     <i class="ph ph-pencil"></i> Edit
                                                 </button>
-                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteKategoriModal{{ $kategori->id_kategori }}">
+                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteKategoriModal{{ $kategori->id_kategori }}">
                                                     <i class="ph ph-trash"></i> Hapus
                                                 </button>
                                             </td>
@@ -89,7 +89,7 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <!-- ==================== TAB JURUSAN ==================== -->
                         <div class="tab-pane fade" id="jurusan" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -121,16 +121,16 @@
                                                 <span class="badge bg-info">{{ $jurusan->kelas_count ?? 0 }} Kelas</span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#viewJurusanModal{{ $jurusan->id_jurusan }}">
+                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#viewJurusanModal{{ $jurusan->id_jurusan }}">
                                                     <i class="ph ph-eye"></i> Detail
                                                 </button>
-                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#editJurusanModal{{ $jurusan->id_jurusan }}">
+                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#editJurusanModal{{ $jurusan->id_jurusan }}">
                                                     <i class="ph ph-pencil"></i> Edit
                                                 </button>
-                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteJurusanModal{{ $jurusan->id_jurusan }}">
+                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteJurusanModal{{ $jurusan->id_jurusan }}">
                                                     <i class="ph ph-trash"></i> Hapus
                                                 </button>
                                             </td>
@@ -144,7 +144,7 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <!-- ==================== TAB KELAS ==================== -->
                         <div class="tab-pane fade" id="kelas" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -180,16 +180,16 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#viewKelasModal{{ $k->id_kelas }}">
+                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#viewKelasModal{{ $k->id_kelas }}">
                                                     <i class="ph ph-eye"></i> Detail
                                                 </button>
-                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#editKelasModal{{ $k->id_kelas }}">
+                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#editKelasModal{{ $k->id_kelas }}">
                                                     <i class="ph ph-pencil"></i> Edit
                                                 </button>
-                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteKelasModal{{ $k->id_kelas }}">
+                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteKelasModal{{ $k->id_kelas }}">
                                                     <i class="ph ph-trash"></i> Hapus
                                                 </button>
                                             </td>
@@ -203,7 +203,7 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <!-- ==================== TAB RUANGAN ==================== -->
                         <div class="tab-pane fade" id="ruangan" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -239,16 +239,16 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#viewRuanganModal{{ $ruangan->id_ruangan }}">
+                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#viewRuanganModal{{ $ruangan->id_ruangan }}">
                                                     <i class="ph ph-eye"></i> Detail
                                                 </button>
-                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#editRuanganModal{{ $ruangan->id_ruangan }}">
+                                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#editRuanganModal{{ $ruangan->id_ruangan }}">
                                                     <i class="ph ph-pencil"></i> Edit
                                                 </button>
-                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteRuanganModal{{ $ruangan->id_ruangan }}">
+                                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteRuanganModal{{ $ruangan->id_ruangan }}">
                                                     <i class="ph ph-trash"></i> Hapus
                                                 </button>
                                             </td>
@@ -262,7 +262,7 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                     </div>
                 </div>
             </div>
@@ -270,110 +270,110 @@
     </div>
 
     <!-- MODAL VIEW RUANGAN - FIXED -->
-@foreach($ruangans as $ruangan)
-<div class="modal fade" id="viewRuanganModal{{ $ruangan->id_ruangan }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">
-                    <i class="ph ph-eye"></i> Detail Ruangan
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-borderless">
-                        <tr>
-                            <th width="35%">Kode Ruangan</th>
-                            <td width="5%">:</td>
-                            <td><span class="badge bg-secondary">{{ $ruangan->kode_ruangan }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Nama Ruangan</th>
-                            <td>:</td>
-                            <td><strong>{{ $ruangan->nama_ruangan }}</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Jenis Ruangan</th>
-                            <td>:</td>
-                            <td>{{ $ruangan->jenis_ruangan }}</td>
-                        </tr>
-                        <tr>
-                            <th>Lokasi</th>
-                            <td>:</td>
-                            <td>{{ $ruangan->lokasi ?: '-' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Kapasitas</th>
-                            <td>:</td>
-                            <td>{{ $ruangan->kapasitas ?: '-' }} orang</td>
-                        </tr>
-                        <tr>
-                            <th>Kondisi</th>
-                            <td>:</td>
-                            <td>
-                                <span class="badge bg-{{ $ruangan->status_badge ?? 'secondary' }}">
-                                    {{ $ruangan->kondisi }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Deskripsi</th>
-                            <td>:</td>
-                            <td>{{ $ruangan->deskripsi ?: '-' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Dibuat Pada</th>
-                            <td>:</td>
-                            <td>
-                                @php
+    @foreach($ruangans as $ruangan)
+    <div class="modal fade" id="viewRuanganModal{{ $ruangan->id_ruangan }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="ph ph-eye"></i> Detail Ruangan
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="35%">Kode Ruangan</th>
+                                <td width="5%">:</td>
+                                <td><span class="badge bg-secondary">{{ $ruangan->kode_ruangan }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Nama Ruangan</th>
+                                <td>:</td>
+                                <td><strong>{{ $ruangan->nama_ruangan }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Jenis Ruangan</th>
+                                <td>:</td>
+                                <td>{{ $ruangan->jenis_ruangan }}</td>
+                            </tr>
+                            <tr>
+                                <th>Lokasi</th>
+                                <td>:</td>
+                                <td>{{ $ruangan->lokasi ?: '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Kapasitas</th>
+                                <td>:</td>
+                                <td>{{ $ruangan->kapasitas ?: '-' }} orang</td>
+                            </tr>
+                            <tr>
+                                <th>Kondisi</th>
+                                <td>:</td>
+                                <td>
+                                    <span class="badge bg-{{ $ruangan->status_badge ?? 'secondary' }}">
+                                        {{ $ruangan->kondisi }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Deskripsi</th>
+                                <td>:</td>
+                                <td>{{ $ruangan->deskripsi ?: '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Dibuat Pada</th>
+                                <td>:</td>
+                                <td>
+                                    @php
                                     $createdAt = $ruangan->created_at;
                                     if ($createdAt && $createdAt != '0000-00-00 00:00:00') {
-                                        if ($createdAt instanceof \Carbon\Carbon) {
-                                            echo $createdAt->format('d/m/Y H:i');
-                                        } else {
-                                            echo date('d/m/Y H:i', strtotime($createdAt));
-                                        }
+                                    if ($createdAt instanceof \Carbon\Carbon) {
+                                    echo $createdAt->format('d/m/Y H:i');
                                     } else {
-                                        echo '-';
+                                    echo date('d/m/Y H:i', strtotime($createdAt));
                                     }
-                                @endphp
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Terakhir Diupdate</th>
-                            <td>:</td>
-                            <td>
-                                @php
+                                    } else {
+                                    echo '-';
+                                    }
+                                    @endphp
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Terakhir Diupdate</th>
+                                <td>:</td>
+                                <td>
+                                    @php
                                     $updatedAt = $ruangan->updated_at;
                                     if ($updatedAt && $updatedAt != '0000-00-00 00:00:00') {
-                                        if ($updatedAt instanceof \Carbon\Carbon) {
-                                            echo $updatedAt->format('d/m/Y H:i');
-                                        } else {
-                                            echo date('d/m/Y H:i', strtotime($updatedAt));
-                                        }
+                                    if ($updatedAt instanceof \Carbon\Carbon) {
+                                    echo $updatedAt->format('d/m/Y H:i');
                                     } else {
-                                        echo '-';
+                                    echo date('d/m/Y H:i', strtotime($updatedAt));
                                     }
-                                @endphp
-                            </td>
-                        </tr>
-                    </table>
+                                    } else {
+                                    echo '-';
+                                    }
+                                    @endphp
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    @if(($ruangan->aspirasi_count ?? 0) > 0)
+                    <div class="alert alert-info mt-2">
+                        <i class="ph ph-info"></i>
+                        <strong>Informasi:</strong> Ruangan ini telah digunakan dalam {{ $ruangan->aspirasi_count }} aspirasi.
+                    </div>
+                    @endif
                 </div>
-                @if(($ruangan->aspirasi_count ?? 0) > 0)
-                <div class="alert alert-info mt-2">
-                    <i class="ph ph-info"></i> 
-                    <strong>Informasi:</strong> Ruangan ini telah digunakan dalam {{ $ruangan->aspirasi_count }} aspirasi.
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
-                @endif
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
-</div>
-@endforeach
+    @endforeach
 
     <!-- ==================== MODAL VIEW JURUSAN ==================== -->
     @foreach($jurusans as $jurusan)
@@ -425,7 +425,7 @@
                     </div>
                     @if(($jurusan->kelas_count ?? 0) > 0)
                     <div class="alert alert-info mt-2">
-                        <i class="ph ph-info"></i> 
+                        <i class="ph ph-info"></i>
                         <strong>Informasi:</strong> Jurusan ini memiliki {{ $jurusan->kelas_count }} kelas.
                     </div>
                     @endif
@@ -500,7 +500,7 @@
                     </div>
                     @if(($k->siswa_count ?? 0) > 0)
                     <div class="alert alert-info mt-2">
-                        <i class="ph ph-info"></i> 
+                        <i class="ph ph-info"></i>
                         <strong>Informasi:</strong> Kelas ini memiliki {{ $k->siswa_count }} siswa.
                     </div>
                     @endif
@@ -571,16 +571,16 @@
                                 <td>:</td>
                                 <td>
                                     @php
-                                        $createdAt = $ruangan->created_at;
-                                        if ($createdAt) {
-                                            if ($createdAt instanceof \Carbon\Carbon) {
-                                                echo $createdAt->format('d/m/Y H:i');
-                                            } else {
-                                                echo \Carbon\Carbon::parse($createdAt)->format('d/m/Y H:i');
-                                            }
-                                        } else {
-                                            echo '-';
-                                        }
+                                    $createdAt = $ruangan->created_at;
+                                    if ($createdAt) {
+                                    if ($createdAt instanceof \Carbon\Carbon) {
+                                    echo $createdAt->format('d/m/Y H:i');
+                                    } else {
+                                    echo \Carbon\Carbon::parse($createdAt)->format('d/m/Y H:i');
+                                    }
+                                    } else {
+                                    echo '-';
+                                    }
                                     @endphp
                                 </td>
                             </tr>
@@ -589,16 +589,16 @@
                                 <td>:</td>
                                 <td>
                                     @php
-                                        $updatedAt = $ruangan->updated_at;
-                                        if ($updatedAt) {
-                                            if ($updatedAt instanceof \Carbon\Carbon) {
-                                                echo $updatedAt->format('d/m/Y H:i');
-                                            } else {
-                                                echo \Carbon\Carbon::parse($updatedAt)->format('d/m/Y H:i');
-                                            }
-                                        } else {
-                                            echo '-';
-                                        }
+                                    $updatedAt = $ruangan->updated_at;
+                                    if ($updatedAt) {
+                                    if ($updatedAt instanceof \Carbon\Carbon) {
+                                    echo $updatedAt->format('d/m/Y H:i');
+                                    } else {
+                                    echo \Carbon\Carbon::parse($updatedAt)->format('d/m/Y H:i');
+                                    }
+                                    } else {
+                                    echo '-';
+                                    }
                                     @endphp
                                 </td>
                             </tr>
@@ -606,7 +606,7 @@
                     </div>
                     @if(($ruangan->aspirasi_count ?? 0) > 0)
                     <div class="alert alert-info mt-2">
-                        <i class="ph ph-info"></i> 
+                        <i class="ph ph-info"></i>
                         <strong>Informasi:</strong> Ruangan ini telah digunakan dalam {{ $ruangan->aspirasi_count }} aspirasi.
                     </div>
                     @endif
@@ -634,13 +634,13 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nama Kategori <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_kategori" class="form-control" 
+                            <input type="text" name="nama_kategori" class="form-control"
                                 placeholder="Contoh: Meja, Kursi, Papan Tulis" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control" rows="3" 
-                                    placeholder="Jelaskan tentang kategori ini..."></textarea>
+                            <textarea name="deskripsi" class="form-control" rows="3"
+                                placeholder="Jelaskan tentang kategori ini..."></textarea>
                             <small class="text-muted">Deskripsi akan membantu siswa memahami kategori ini</small>
                         </div>
                     </div>
@@ -672,7 +672,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nama Kategori</label>
-                            <input type="text" name="nama_kategori" class="form-control" 
+                            <input type="text" name="nama_kategori" class="form-control"
                                 value="{{ $kategori->nama_kategori }}" required>
                         </div>
                         <div class="mb-3">
@@ -681,8 +681,8 @@
                         </div>
                         @if(($kategori->aspirasi_count ?? 0) > 0)
                         <div class="alert alert-warning">
-                            <i class="ph ph-warning"></i> 
-                            <strong>Perhatian:</strong> Kategori ini sudah digunakan dalam 
+                            <i class="ph ph-warning"></i>
+                            <strong>Perhatian:</strong> Kategori ini sudah digunakan dalam
                             {{ $kategori->aspirasi_count }} aspirasi.
                         </div>
                         @endif
@@ -714,9 +714,9 @@
                     <p class="text-center">Apakah Anda yakin ingin menghapus kategori <strong>"{{ $kategori->nama_kategori }}"</strong>?</p>
                     @if(($kategori->aspirasi_count ?? 0) > 0)
                     <div class="alert alert-danger">
-                        <i class="ph ph-warning"></i> 
+                        <i class="ph ph-warning"></i>
                         <strong>Peringatan!</strong><br>
-                        Kategori ini memiliki <strong>{{ $kategori->aspirasi_count }} aspirasi</strong>. 
+                        Kategori ini memiliki <strong>{{ $kategori->aspirasi_count }} aspirasi</strong>.
                         Menghapus kategori akan mengosongkan kategori pada aspirasi tersebut.
                     </div>
                     @endif
@@ -728,6 +728,64 @@
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger">Ya, Hapus</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endforeach
+
+    <!-- ==================== MODAL VIEW KATEGORI ==================== -->
+    @foreach($kategoris as $kategori)
+    <div class="modal fade" id="viewKategoriModal{{ $kategori->id_kategori }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="ph ph-eye"></i> Detail Kategori
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="35%">Nama Kategori</th>
+                                <td width="5%">:</td>
+                                <td><strong>{{ $kategori->nama_kategori }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Deskripsi</th>
+                                <td>:</td>
+                                <td>{{ $kategori->deskripsi ?: '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Aspirasi</th>
+                                <td>:</td>
+                                <td>
+                                    <span class="badge bg-info">{{ $kategori->aspirasi_count ?? 0 }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Dibuat Pada</th>
+                                <td>:</td>
+                                <td>{{ $kategori->created_at ? $kategori->created_at->format('d/m/Y H:i') : '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Terakhir Diupdate</th>
+                                <td>:</td>
+                                <td>{{ $kategori->updated_at ? $kategori->updated_at->format('d/m/Y H:i') : '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @if(($kategori->aspirasi_count ?? 0) > 0)
+                    <div class="alert alert-info mt-2">
+                        <i class="ph ph-info"></i>
+                        <strong>Informasi:</strong> Kategori ini telah digunakan dalam {{ $kategori->aspirasi_count }} aspirasi.
+                    </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -749,19 +807,19 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Kode Jurusan <span class="text-danger">*</span></label>
-                            <input type="text" name="kode_jurusan" class="form-control" 
+                            <input type="text" name="kode_jurusan" class="form-control"
                                 placeholder="Contoh: RPL, TKJ, MM" required>
                             <small class="text-muted">Kode jurusan harus unik (max 20 karakter)</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Nama Jurusan <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_jurusan" class="form-control" 
+                            <input type="text" name="nama_jurusan" class="form-control"
                                 placeholder="Contoh: Rekayasa Perangkat Lunak" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control" rows="3" 
-                                    placeholder="Deskripsi jurusan..."></textarea>
+                            <textarea name="deskripsi" class="form-control" rows="3"
+                                placeholder="Deskripsi jurusan..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -792,12 +850,12 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Kode Jurusan</label>
-                            <input type="text" name="kode_jurusan" class="form-control" 
+                            <input type="text" name="kode_jurusan" class="form-control"
                                 value="{{ $jurusan->kode_jurusan }}" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Nama Jurusan</label>
-                            <input type="text" name="nama_jurusan" class="form-control" 
+                            <input type="text" name="nama_jurusan" class="form-control"
                                 value="{{ $jurusan->nama_jurusan }}" required>
                         </div>
                         <div class="mb-3">
@@ -806,7 +864,7 @@
                         </div>
                         @if(($jurusan->kelas_count ?? 0) > 0)
                         <div class="alert alert-warning">
-                            <i class="ph ph-warning"></i> 
+                            <i class="ph ph-warning"></i>
                             <strong>Perhatian:</strong> Jurusan ini memiliki {{ $jurusan->kelas_count }} kelas.
                         </div>
                         @endif
@@ -838,9 +896,9 @@
                     <p class="text-center">Apakah Anda yakin ingin menghapus jurusan <strong>"{{ $jurusan->nama_jurusan }}"</strong>?</p>
                     @if(($jurusan->kelas_count ?? 0) > 0)
                     <div class="alert alert-danger">
-                        <i class="ph ph-warning"></i> 
+                        <i class="ph ph-warning"></i>
                         <strong>Peringatan!</strong><br>
-                        Jurusan ini memiliki <strong>{{ $jurusan->kelas_count }} kelas</strong>. 
+                        Jurusan ini memiliki <strong>{{ $jurusan->kelas_count }} kelas</strong>.
                         Menghapus jurusan akan menghapus semua kelas yang terkait.
                     </div>
                     @endif
@@ -873,7 +931,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nama Kelas <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_kelas" class="form-control" 
+                            <input type="text" name="nama_kelas" class="form-control"
                                 placeholder="Contoh: 10 RPL, 11 TKJ" required>
                             <small class="text-muted">Contoh: 10 RPL, 11 TKJ, 12 MM</small>
                         </div>
@@ -902,8 +960,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control" rows="2" 
-                                    placeholder="Informasi tambahan tentang kelas ini"></textarea>
+                            <textarea name="deskripsi" class="form-control" rows="2"
+                                placeholder="Informasi tambahan tentang kelas ini"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -934,7 +992,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nama Kelas</label>
-                            <input type="text" name="nama_kelas" class="form-control" 
+                            <input type="text" name="nama_kelas" class="form-control"
                                 value="{{ $k->nama_kelas }}" required>
                         </div>
                         <div class="mb-3">
@@ -965,7 +1023,7 @@
                         </div>
                         @if(($k->siswa_count ?? 0) > 0)
                         <div class="alert alert-warning">
-                            <i class="ph ph-warning"></i> 
+                            <i class="ph ph-warning"></i>
                             <strong>Perhatian:</strong> Kelas ini memiliki {{ $k->siswa_count }} siswa.
                         </div>
                         @endif
@@ -997,9 +1055,9 @@
                     <p class="text-center">Apakah Anda yakin ingin menghapus kelas <strong>"{{ $k->nama_kelas }}"</strong>?</p>
                     @if(($k->siswa_count ?? 0) > 0)
                     <div class="alert alert-danger">
-                        <i class="ph ph-warning"></i> 
+                        <i class="ph ph-warning"></i>
                         <strong>Peringatan!</strong><br>
-                        Kelas ini memiliki <strong>{{ $k->siswa_count }} siswa</strong>. 
+                        Kelas ini memiliki <strong>{{ $k->siswa_count }} siswa</strong>.
                         Menghapus kelas akan mengosongkan data kelas pada siswa tersebut.
                     </div>
                     @endif
@@ -1034,7 +1092,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Kode Ruangan <span class="text-danger">*</span></label>
-                                    <input type="text" name="kode_ruangan" class="form-control" 
+                                    <input type="text" name="kode_ruangan" class="form-control"
                                         placeholder="Contoh: R-01, LAB-01" required>
                                     <small class="text-muted">Kode unik untuk ruangan</small>
                                 </div>
@@ -1042,7 +1100,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Nama Ruangan <span class="text-danger">*</span></label>
-                                    <input type="text" name="nama_ruangan" class="form-control" 
+                                    <input type="text" name="nama_ruangan" class="form-control"
                                         placeholder="Contoh: Ruang Kelas 10 RPL" required>
                                 </div>
                             </div>
@@ -1069,7 +1127,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Lokasi</label>
-                                    <input type="text" name="lokasi" class="form-control" 
+                                    <input type="text" name="lokasi" class="form-control"
                                         placeholder="Contoh: Lantai 1, Gedung A">
                                 </div>
                             </div>
@@ -1078,7 +1136,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Kapasitas</label>
-                                    <input type="number" name="kapasitas" class="form-control" 
+                                    <input type="number" name="kapasitas" class="form-control"
                                         placeholder="Jumlah orang" min="1">
                                 </div>
                             </div>
@@ -1096,8 +1154,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Deskripsi</label>
-                            <textarea name="deskripsi" class="form-control" rows="2" 
-                                    placeholder="Informasi tambahan tentang ruangan"></textarea>
+                            <textarea name="deskripsi" class="form-control" rows="2"
+                                placeholder="Informasi tambahan tentang ruangan"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1130,14 +1188,14 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Kode Ruangan</label>
-                                    <input type="text" name="kode_ruangan" class="form-control" 
+                                    <input type="text" name="kode_ruangan" class="form-control"
                                         value="{{ $ruangan->kode_ruangan }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Nama Ruangan</label>
-                                    <input type="text" name="nama_ruangan" class="form-control" 
+                                    <input type="text" name="nama_ruangan" class="form-control"
                                         value="{{ $ruangan->nama_ruangan }}" required>
                                 </div>
                             </div>
@@ -1192,7 +1250,7 @@
                         </div>
                         @if(($ruangan->aspirasi_count ?? 0) > 0)
                         <div class="alert alert-warning">
-                            <i class="ph ph-warning"></i> 
+                            <i class="ph ph-warning"></i>
                             <strong>Perhatian:</strong> Ruangan ini memiliki {{ $ruangan->aspirasi_count }} aspirasi.
                         </div>
                         @endif
@@ -1224,9 +1282,9 @@
                     <p class="text-center">Apakah Anda yakin ingin menghapus ruangan <strong>"{{ $ruangan->nama_ruangan }}"</strong>?</p>
                     @if(($ruangan->aspirasi_count ?? 0) > 0)
                     <div class="alert alert-danger">
-                        <i class="ph ph-warning"></i> 
+                        <i class="ph ph-warning"></i>
                         <strong>Peringatan!</strong><br>
-                        Ruangan ini memiliki <strong>{{ $ruangan->aspirasi_count }} aspirasi</strong>. 
+                        Ruangan ini memiliki <strong>{{ $ruangan->aspirasi_count }} aspirasi</strong>.
                         Menghapus ruangan akan mengosongkan data ruangan pada aspirasi tersebut.
                     </div>
                     @endif
@@ -1267,28 +1325,36 @@
 
     @push('scripts')
     <script>
-        // Active tab based on URL hash
         $(document).ready(function() {
-            var hash = window.location.hash;
-            if (hash) {
-                var tab = $('.nav-tabs button[data-bs-target="' + hash + '"]');
+            // ====== SIMPAN TAB AKTIF PAKAI SESSION STORAGE ======
+
+            // Cek apakah ada tab yang tersimpan
+            var savedTab = sessionStorage.getItem('masterDataActiveTab');
+            var urlHash = window.location.hash;
+
+            // Prioritas: URL hash dulu, kalau tidak ada pakai sessionStorage
+            var activeTab = urlHash || savedTab;
+
+            if (activeTab) {
+                var tab = $('.nav-tabs button[data-bs-target="' + activeTab + '"]');
                 if (tab.length) {
                     tab.tab('show');
                 }
             }
-            
-            // Update URL hash when tab changes
+
+            // Simpan tab aktif setiap kali tab berganti
             $('.nav-tabs button').on('shown.bs.tab', function(e) {
                 var target = $(e.target).data('bs-target');
+                sessionStorage.setItem('masterDataActiveTab', target);
                 window.location.hash = target;
             });
         });
-        
+
         // Auto close alert after 3 seconds
         setTimeout(function() {
             let alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
-                if(alert.classList.contains('alert-success') || alert.classList.contains('alert-danger')) {
+                if (alert.classList.contains('alert-success') || alert.classList.contains('alert-danger')) {
                     alert.style.transition = 'opacity 0.5s';
                     alert.style.opacity = '0';
                     setTimeout(function() {

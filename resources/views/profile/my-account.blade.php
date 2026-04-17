@@ -29,18 +29,18 @@
                     </div>
                     @endif
                 </div>
-                
+
                 @php
-                    $displayName = '-';
-                    if($user->role == 'siswa' && $user->siswa) {
-                        $displayName = $user->siswa->nama;
-                    } elseif($user->role == 'guru' && $user->guru) {
-                        $displayName = $user->guru->nama;
-                    } elseif($user->role == 'petugas' && $user->petugas) {
-                        $displayName = $user->petugas->nama;
-                    } else {
-                        $displayName = $user->email;
-                    }
+                $displayName = '-';
+                if($user->role == 'siswa' && $user->siswa) {
+                    $displayName = $user->siswa->nama;
+                } elseif($user->role == 'guru' && $user->guru) {
+                    $displayName = $user->guru->nama;
+                } elseif($user->role == 'petugas' && $user->petugas) {
+                    $displayName = $user->petugas->nama;
+                } else {
+                    $displayName = $user->email;
+                }
                 @endphp
                 <h5>{{ $displayName }}</h5>
                 <span class="badge bg-primary">{{ ucfirst($user->role) }}</span>
@@ -93,6 +93,21 @@
                     <tr>
                         <th>Alamat</th>
                         <td>{{ $user->siswa->alamat ?? '-' }}</td>
+                    </tr>
+                    <!-- TAMBAHKAN STATUS PIN UNTUK SISWA -->
+                    <tr>
+                        <th>Status PIN</th>
+                        <td>
+                            @if($user->siswa->pin)
+                                <span class="badge bg-success">Aktif</span>
+                                <br>
+                                <small class="text-muted">PIN sudah dibuat</small>
+                            @else
+                                <span class="badge bg-danger">Belum</span>
+                                <br>
+                                <small class="text-muted">Silakan setup PIN terlebih dahulu</small>
+                            @endif
+                        </td>
                     </tr>
 
                     @elseif($user->role == 'guru' && $user->guru)
@@ -170,10 +185,15 @@
                     @endif
                 </table>
             </div>
-            <div class="card-footer">
+            <div class="card-footer d-flex gap-2">
                 <a href="{{ route('profile.settings') }}" class="btn btn-warning btn-sm">
                     <i class="ph ph-pencil"></i> Edit Profil
                 </a>
+                @if($user->role == 'siswa' && $user->siswa && !$user->siswa->pin)
+                <a href="{{ route('siswa.setup-pin') }}" class="btn btn-primary btn-sm">
+                    <i class="ph ph-key"></i> Setup PIN
+                </a>
+                @endif
             </div>
         </div>
     </div>

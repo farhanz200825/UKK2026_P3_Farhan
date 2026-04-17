@@ -13,6 +13,20 @@
                 <table class="table table-bordered">
                     <tr><th width="30%">Kategori</th><td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td></tr>
                     <tr><th>Ruangan</th><td>{{ $aspirasi->ruangan->nama_ruangan ?? $aspirasi->lokasi }}</td></tr>
+                    
+                    <!-- TAMBAHKAN BARIS SAKSI DI SINI -->
+                    <tr>
+                        <th>Saksi</th>
+                        <td>
+                            @if($aspirasi->saksi)
+                                {{ $aspirasi->saksi->nama }}
+                                <br><small class="text-muted">{{ $aspirasi->saksi->nis }} - Kelas {{ $aspirasi->saksi->kelasRelasi->nama_kelas ?? $aspirasi->saksi->kelas }}</small>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                    
                     <tr>
                         <th>Pengirim</th>
                         <td>
@@ -21,20 +35,58 @@
                             @endphp
                             {{ $pengirim->nama ?? $aspirasi->user->email }}
                             <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
-                        </td>
-                    </tr>
+                        
+
+                    
                     <tr><th>Keterangan</th><td>{{ $aspirasi->keterangan }}</td></tr>
                     @if($aspirasi->foto)
-                    <tr><th>Foto Awal</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail"></td></tr>
+                    <tr><th>Foto Awal</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail">Ru
                     @endif
+                    
+                    <!-- TAMPILKAN FOTO BUKTI SELESAI -->
+                    @php
+                        $fotoBukti = null;
+                        $fotoBuktiKeterangan = null;
+                        foreach($aspirasi->progres as $progres) {
+                            if(str_contains($progres->keterangan_progres, '📎 Foto bukti:')) {
+                                preg_match('/📎 Foto bukti: (.*)/', $progres->keterangan_progres, $matches);
+                                if(isset($matches[1])) {
+                                    $fotoBukti = $matches[1];
+                                    $fotoBuktiKeterangan = $progres->keterangan_progres;
+                                    break;
+                                }
+                            }
+                        }
+                    @endphp
+                    
+                    @if($fotoBukti)
+                    <tr>
+                        <th>Foto Bukti Selesai</th>
+                        <td>
+                            <img src="{{ $fotoBukti }}" alt="Foto Bukti" width="300" class="img-thumbnail">
+                            <br>
+                            <small class="text-muted">Foto bukti penanganan setelah selesai</small>
+                            @if($fotoBuktiKeterangan)
+                            <br>
+                            <small class="text-muted">Keterangan: {{ Str::limit(str_replace('📎 Foto bukti: ' . $fotoBukti, '', $fotoBuktiKeterangan), 100) }}</small>
+                            @endif
+                        
+
+                     
+                    @endif
+                    
                     <tr><th>Status</th>
                         <td>
                             <span class="badge bg-{{ $aspirasi->status == 'Selesai' ? 'success' : ($aspirasi->status == 'Proses' ? 'info' : 'warning') }}">
                                 {{ $aspirasi->status }}
                             </span>
-                        </td>
-                    </tr>
+                        
+
+                    
                     <tr><th>Dibuat Pada</th><td>{{ $aspirasi->created_at->format('d/m/Y H:i:s') }}</td></tr>
+                    @if($aspirasi->status == 'Selesai')
+                    <tr><th>Selesai Pada</th><td>{{ $aspirasi->updated_at->format('d/m/Y H:i:s') }}</td></tr>
+                    @endif
                 </table>
             </div>
         </div>
@@ -176,8 +228,6 @@
     
     // Status change handler
     const statusSelect = document.getElementById('statusSelect');
-    const keteranganDiv = document.getElementById('keteranganDiv');
-    const fotoDiv = document.getElementById('fotoDiv');
     const warningAlert = document.getElementById('warningAlert');
     const keteranganRequired = document.getElementById('keteranganRequired');
     const fotoRequired = document.getElementById('fotoRequired');
@@ -189,32 +239,18 @@
         const isSelesai = statusSelect.value === 'Selesai';
         
         if (isSelesai) {
-            // Tampilkan peringatan
             warningAlert.style.display = 'block';
-            
-            // Tambahkan required attribute
             keteranganText.required = true;
             fotoBukti.required = true;
-            
-            // Tampilkan tanda bintang merah
             keteranganRequired.style.display = 'inline';
             fotoRequired.style.display = 'inline';
-            
-            // Validasi form
             validateForm();
         } else {
-            // Sembunyikan peringatan
             warningAlert.style.display = 'none';
-            
-            // Hapus required attribute
             keteranganText.required = false;
             fotoBukti.required = false;
-            
-            // Sembunyikan tanda bintang merah
             keteranganRequired.style.display = 'none';
             fotoRequired.style.display = 'none';
-            
-            // Hapus class is-invalid
             keteranganText.classList.remove('is-invalid');
             fotoBukti.classList.remove('is-invalid');
         }
@@ -257,7 +293,6 @@
         }
     });
     
-    // Initial check
     checkStatus();
 </script>
 @endpush

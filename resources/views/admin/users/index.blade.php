@@ -184,7 +184,8 @@
                                         <th>Kelas</th>
                                         <th>Jurusan</th>
                                         <th>Email</th>
-                                        <th width="15%">Aksi</th>
+                                        <th>Status</th>
+                                        <th width="20%">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -206,7 +207,16 @@
                                         <td>{{ $siswa->jurusanRelasi->nama_jurusan ?? $siswa->jurusan ?? '-' }}</td>
                                         <td>{{ $siswa->user->email ?? '-' }}</td>
                                         <td>
-                                            <div class="d-flex gap-1">
+                                            @if($siswa->pin)
+                                            <span class="badge bg-success">PIN Aktif</span>
+                                            @elseif($siswa->token)
+                                            <span class="badge bg-warning">Token Diberikan</span>
+                                            @else
+                                            <span class="badge bg-danger">Belum</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 flex-wrap">
                                                 <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewSiswaModal{{ $siswa->id }}">
                                                     <i class="ph ph-eye"></i>
                                                 </button>
@@ -216,12 +226,29 @@
                                                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSiswaModal{{ $siswa->id }}">
                                                     <i class="ph ph-trash"></i>
                                                 </button>
+
+                                                @if($siswa->pin)
+                                                <form action="{{ route('admin.siswa.reset-token', $siswa->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Reset PIN siswa ini?')">
+                                                        <i class="ph ph-arrow-counter-clockwise"></i> Reset
+                                                    </button>
+                                                </form>
+                                                @else
+                                                <form action="{{ route('admin.siswa.generate-token', $siswa->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="ph ph-key"></i> Generate Token
+                                                    </button>
+                                                </form>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="8" class="text-center">Belum ada data siswa</td>
+                                        <td colspan="9" class="text-center">Belum ada data siswa</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -516,9 +543,6 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-3 text-center">
-                        <img src="{{ $guru->foto ? asset('storage/' . $guru->foto) : asset('assets/images/user/avatar-1.jpg') }}" width="100" height="100" class="rounded-circle">
-                    </div>
                     <div class="col-md-9">
                         <p><strong>NIP:</strong> {{ $guru->nip ?? '-' }}</p>
                         <p><strong>Nama:</strong> {{ $guru->nama }}</p>
@@ -565,19 +589,19 @@
                             <select name="id_kelas" class="form-select" id="kelasSelectEdit{{ $guru->id }}">
                                 <option value="">Pilih Kelas</option>
                                 @php
-                                    // Kelas yang tersedia (belum dipakai wali kelas lain) + kelas milik sendiri
-                                    $kelasTerpakaiLain = \App\Models\Guru::where('jabatan', 'Wali Kelas')
-                                        ->where('id', '!=', $guru->id)
-                                        ->whereNotNull('id_kelas')
-                                        ->pluck('id_kelas')
-                                        ->toArray();
+                                // Kelas yang tersedia (belum dipakai wali kelas lain) + kelas milik sendiri
+                                $kelasTerpakaiLain = \App\Models\Guru::where('jabatan', 'Wali Kelas')
+                                ->where('id', '!=', $guru->id)
+                                ->whereNotNull('id_kelas')
+                                ->pluck('id_kelas')
+                                ->toArray();
                                 @endphp
                                 @foreach($allKelas as $kelas)
-                                    @if(!in_array($kelas->id_kelas, $kelasTerpakaiLain) || $guru->id_kelas == $kelas->id_kelas)
-                                    <option value="{{ $kelas->id_kelas }}" {{ $guru->id_kelas == $kelas->id_kelas ? 'selected' : '' }}>
-                                        {{ $kelas->nama_kelas }}
-                                    </option>
-                                    @endif
+                                @if(!in_array($kelas->id_kelas, $kelasTerpakaiLain) || $guru->id_kelas == $kelas->id_kelas)
+                                <option value="{{ $kelas->id_kelas }}" {{ $guru->id_kelas == $kelas->id_kelas ? 'selected' : '' }}>
+                                    {{ $kelas->nama_kelas }}
+                                </option>
+                                @endif
                                 @endforeach
                             </select>
                             <small class="text-muted">Kelas yang menjadi tanggung jawab sebagai Wali Kelas</small>
@@ -799,25 +823,25 @@
 
     // Untuk setiap Edit Modal
     @foreach($gurus as $guru)
-    (function() {
-        const jabatanSelect = document.getElementById('jabatanSelectEdit{{ $guru->id }}');
-        const kelasField = document.getElementById('kelasFieldEdit{{ $guru->id }}');
-        
-        if (jabatanSelect) {
-            jabatanSelect.addEventListener('change', function() {
-                if (this.value === 'Wali Kelas') {
-                    kelasField.style.display = 'block';
-                    // Set required attribute pada select kelas
-                    const kelasSelect = kelasField.querySelector('select');
-                    if (kelasSelect) kelasSelect.required = true;
-                } else {
-                    kelasField.style.display = 'none';
-                    const kelasSelect = kelasField.querySelector('select');
-                    if (kelasSelect) kelasSelect.required = false;
-                }
-            });
-        }
-    })();
+        (function() {
+            const jabatanSelect = document.getElementById('jabatanSelectEdit{{ $guru->id }}');
+            const kelasField = document.getElementById('kelasFieldEdit{{ $guru->id }}');
+
+            if (jabatanSelect) {
+                jabatanSelect.addEventListener('change', function() {
+                    if (this.value === 'Wali Kelas') {
+                        kelasField.style.display = 'block';
+                        // Set required attribute pada select kelas
+                        const kelasSelect = kelasField.querySelector('select');
+                        if (kelasSelect) kelasSelect.required = true;
+                    } else {
+                        kelasField.style.display = 'none';
+                        const kelasSelect = kelasField.querySelector('select');
+                        if (kelasSelect) kelasSelect.required = false;
+                    }
+                });
+            }
+        })();
     @endforeach
 </script>
 

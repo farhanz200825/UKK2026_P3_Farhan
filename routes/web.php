@@ -96,8 +96,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         return view('admin.sarana.index');
     })->name('sarana');
 
-    // Logs Activity
-    Route::get('/logs', [DashboardController::class, 'logs'])->name('logs');
+    Route::post('/siswa/{id}/generate-token', [DashboardController::class, 'generateToken'])->name('siswa.generate-token');
+    Route::delete('/siswa/{id}/reset-token', [DashboardController::class, 'resetToken'])->name('siswa.reset-token');
 });
 
 // ==================== GURU ROUTES ====================
@@ -125,6 +125,8 @@ Route::middleware(['auth', 'role:siswa'])->prefix('siswa')->name('siswa.')->grou
     Route::get('/history', [SiswaAspirasiController::class, 'history'])->name('aspirasi.history');
     Route::post('/aspirasi/{id}/feedback', [SiswaAspirasiController::class, 'storeFeedback'])->name('aspirasi.feedback');
     Route::get('/profile', [SiswaAspirasiController::class, 'profile'])->name('profile');
+    Route::get('/setup-pin', [SiswaAspirasiController::class, 'setupPin'])->name('setup-pin');
+    Route::post('/setup-pin', [SiswaAspirasiController::class, 'storePin'])->name('setup-pin.store');
 });
 
 // ==================== PROFILE ROUTES ====================

@@ -13,6 +13,20 @@
                 <table class="table table-bordered">
                     <tr><th width="30%">Kategori</th><td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td></tr>
                     <tr><th>Ruangan</th><td>{{ $aspirasi->ruangan->nama_ruangan ?? $aspirasi->lokasi }}</td></tr>
+                    
+                    <!-- TAMBAHKAN BARIS SAKSI DI SINI -->
+                    <tr>
+                        <th>Saksi</th>
+                        <td>
+                            @if($aspirasi->saksi)
+                                {{ $aspirasi->saksi->nama }}
+                                <br><small class="text-muted">{{ $aspirasi->saksi->nis }} - Kelas {{ $aspirasi->saksi->kelasRelasi->nama_kelas ?? $aspirasi->saksi->kelas }}</small>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                    
                     <tr>
                         <th>Pengirim</th>
                         <td>
