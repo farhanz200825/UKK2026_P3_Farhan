@@ -18,7 +18,7 @@ class Jurusan extends Model
         'deskripsi'
     ];
     
-    public $timestamps = true; // Pastikan ini true
+    public $timestamps = true;
     
     public function kelas()
     {

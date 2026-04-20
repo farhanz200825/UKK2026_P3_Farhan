@@ -34,12 +34,7 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/users', [DashboardController::class, 'users'])->name('users');
-
-    // CRUD Admin
-    Route::post('/admin/store', [DashboardController::class, 'storeAdmin'])->name('admin.store');
-    Route::put('/admin/{id}', [DashboardController::class, 'updateAdmin'])->name('admin.update');
-    Route::delete('/admin/{id}', [DashboardController::class, 'destroyAdmin'])->name('admin.destroy');
-
+    
     // CRUD Guru
     Route::post('/guru/store', [DashboardController::class, 'storeGuru'])->name('guru.store');
     Route::put('/guru/{id}', [DashboardController::class, 'updateGuru'])->name('guru.update');

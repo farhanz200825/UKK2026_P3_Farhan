@@ -20,10 +20,8 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
 
     public function model(array $row)
     {
-        // Cari kelas berdasarkan nama kelas
         $kelas = Kelas::where('nama_kelas', $row['kelas'])->first();
         
-        // Cari jurusan berdasarkan kode jurusan atau nama jurusan
         $jurusan = Jurusan::where('kode_jurusan', $row['jurusan'])
             ->orWhere('nama_jurusan', $row['jurusan'])
             ->first();
@@ -36,7 +34,6 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
             return null;
         }
 
-        // Cek apakah user sudah ada
         $existingUser = User::where('email', $row['email'])->first();
         if ($existingUser) {
             $this->failures[] = [
@@ -46,7 +43,6 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
             return null;
         }
 
-        // Cek apakah NIS sudah ada
         $existingSiswa = Siswa::where('nis', $row['nis'])->first();
         if ($existingSiswa) {
             $this->failures[] = [
@@ -56,13 +52,11 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
             return null;
         }
 
-        // Format tanggal lahir dengan benar
         $tanggalLahir = null;
         if (!empty($row['tanggal_lahir'])) {
             $tanggalLahir = $this->formatDate($row['tanggal_lahir']);
         }
 
-        // Buat user
         $user = User::create([
             'email' => $row['email'],
             'password' => Hash::make($row['password'] ?? 'siswa123'),
@@ -71,7 +65,6 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
 
         $this->successCount++;
 
-        // Buat siswa
         return new Siswa([
             'user_id' => $user->id,
             'nis' => $row['nis'],
@@ -87,9 +80,6 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
         ]);
     }
 
-    /**
-     * Format tanggal ke format YYYY-MM-DD
-     */
     private function formatDate($date)
     {
         if (empty($date)) {
@@ -97,21 +87,19 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
         }
 
         try {
-            // Jika sudah dalam format YYYY-MM-DD
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
                 return $date;
             }
             
-            // Coba parse dengan berbagai format
             $formats = [
-                'm/d/Y',      // 5/15/2008
-                'm/d/y',      // 5/15/08
-                'd/m/Y',      // 15/5/2008
-                'd/m/y',      // 15/5/08
-                'Y-m-d',      // 2008-05-15
-                'Y/m/d',      // 2008/05/15
-                'd-m-Y',      // 15-05-2008
-                'm-d-Y',      // 05-15-2008
+                'm/d/Y',      
+                'm/d/y',      
+                'd/m/Y',    
+                'd/m/y',   
+                'Y-m-d',    
+                'Y/m/d',      
+                'd-m-Y',      
+                'm-d-Y',      
             ];
             
             foreach ($formats as $format) {
@@ -125,7 +113,6 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
                 }
             }
             
-            // Jika semua gagal, coba gunakan strtotime
             $timestamp = strtotime($date);
             if ($timestamp !== false) {
                 return date('Y-m-d', $timestamp);

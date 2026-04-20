@@ -6,19 +6,28 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="ph ph-list"></i> Daftar Aspirasi</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="ph ph-list"></i> Data Aspirasi</h5>
+                <small>Menampilkan aspirasi dengan status Menunggu dan Proses</small>
             </div>
             <div class="card-body">
+                <!-- Alert Info -->
+                <div class="alert alert-info mb-3">
+                    <i class="ph ph-info"></i> 
+                    <strong>Informasi:</strong> Halaman ini hanya menampilkan aspirasi dengan status 
+                    <strong>Menunggu</strong> dan <strong>Proses</strong>. 
+                    Aspirasi yang sudah <strong>Selesai</strong> dapat dilihat di menu 
+                    <strong>History Selesai</strong>.
+                </div>
+                
                 <!-- Filter -->
                 <form method="GET" class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <label class="form-label">Filter Status</label>
+                        <label class="form-label">Status</label>
                         <select name="status" class="form-select">
                             <option value="">Semua Status</option>
                             <option value="Menunggu" {{ request('status') == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
                             <option value="Proses" {{ request('status') == 'Proses' ? 'selected' : '' }}>Diproses</option>
-                            <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -46,14 +55,13 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">No</th>
-                                <th>ID</th>
-                                <th>Pengirim</th>
-                                <th>Kategori</th>
-                                <th>Ruangan</th>
-                                <th>Keterangan</th>
-                                <th>Status</th>
-                                <th>Tanggal</th>
-                                <th width="15%">Aksi</th>
+                                <th width="8%">ID</th>
+                                <th width="20%">Pengirim</th>
+                                <th width="15%">Kategori</th>
+                                <th width="20%">Ruangan</th>
+                                <th width="12%">Status</th>
+                                <th width="12%">Tanggal</th>
+                                <th width="8%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,30 +72,49 @@
                                 <td>
                                     @php
                                         $pengirim = $a->user->siswa ?? $a->user->guru;
+                                        $namaPengirim = $pengirim->nama ?? $a->user->email;
+                                        $rolePengirim = $a->user->role;
+                                        $detailPengirim = '';
+                                        
+                                        if($rolePengirim == 'siswa') {
+                                            $detailPengirim = 'Siswa - ' . ($pengirim->kelas ?? '-');
+                                        } elseif($rolePengirim == 'guru') {
+                                            $detailPengirim = 'Guru - ' . ($pengirim->jabatan ?? '-');
+                                        } else {
+                                            $detailPengirim = ucfirst($rolePengirim);
+                                        }
                                     @endphp
-                                    {{ $pengirim->nama ?? $a->user->email }}
-                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                    <span class="fw-bold">{{ $namaPengirim }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ $detailPengirim }}</small>
                                 
                                 
                                 <td>{{ $a->kategori->nama_kategori ?? '-' }}</td>
                                 <td>{{ $a->ruangan->nama_ruangan ?? $a->lokasi }}</td>
-                                <td>{{ Str::limit($a->keterangan, 50) }}</td>
                                 <td>
-                                    <span class="badge bg-{{ $a->status == 'Selesai' ? 'success' : ($a->status == 'Proses' ? 'info' : 'warning') }}">
+                                    <span class="badge bg-{{ $a->status == 'Proses' ? 'info' : 'warning' }}">
                                         {{ $a->status }}
                                     </span>
                                 
                                 
-                                <td>{{ $a->created_at->format('d/m/Y') }}</td>
+                                <td>{{ $a->created_at ? $a->created_at->format('d/m/Y') : '-' }}</td>
                                 <td>
                                     <a href="{{ route('petugas.aspirasi.detail', $a->id_aspirasi) }}" class="btn btn-info btn-sm">
-                                        <i class="ph ph-eye"></i> Detail
+                                        <i class="ph ph-eye"></i>
                                     </a>
                                 
                               
                             @empty
                                 32
-                                    <td colspan="9" class="text-center">Tidak ada data aspirasi</td>
+                                    <td colspan="8" class="text-center">
+                                        <div class="py-4">
+                                            <i class="ph ph-check-circle ph-2x text-success"></i>
+                                            <p class="mt-2">Semua aspirasi sudah selesai ditangani!</p>
+                                            <a href="{{ route('petugas.history') }}" class="btn btn-sm btn-success">
+                                                <i class="ph ph-clock-counter-clockwise"></i> Lihat History Selesai
+                                            </a>
+                                        </div>
+                                    </span>
                                 
                             @endforelse
                         </tbody>

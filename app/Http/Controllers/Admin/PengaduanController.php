@@ -43,11 +43,9 @@ class PengaduanController extends Controller
         $status_lama = $aspirasi->status;
         $status_baru = $request->status;
         
-        // Update status
         $aspirasi->status = $status_baru;
         $aspirasi->save();
         
-        // Save to history_status
         HistoryStatus::create([
             'id_aspirasi' => $id,
             'status_lama' => $status_lama,
@@ -55,7 +53,6 @@ class PengaduanController extends Controller
             'diubah_oleh' => Auth::id()
         ]);
         
-        // Save progres if there's keterangan
         if ($request->filled('keterangan_progres')) {
             Progres::create([
                 'id_aspirasi' => $id,

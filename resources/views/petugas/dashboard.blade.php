@@ -49,13 +49,13 @@
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Pengirim</th>
-                                <th>Kategori</th>
-                                <th>Ruangan</th>
-                                <th>Status</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
+                                <th width="5%">ID</th>
+                                <th width="20%">Pengirim</th>
+                                <th width="15%">Kategori</th>
+                                <th width="20%">Ruangan</th>
+                                <th width="10%">Status</th>
+                                <th width="15%">Tanggal</th>
+                                <th width="15%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,9 +65,21 @@
                                 <td>
                                     @php
                                         $pengirim = $a->user->siswa ?? $a->user->guru;
+                                        $namaPengirim = $pengirim->nama ?? $a->user->email;
+                                        $rolePengirim = $a->user->role;
+                                        $detailPengirim = '';
+                                        
+                                        if($rolePengirim == 'siswa') {
+                                            $detailPengirim = 'Siswa - ' . ($pengirim->kelas ?? '-');
+                                        } elseif($rolePengirim == 'guru') {
+                                            $detailPengirim = 'Guru - ' . ($pengirim->jabatan ?? '-');
+                                        } else {
+                                            $detailPengirim = ucfirst($rolePengirim);
+                                        }
                                     @endphp
-                                    {{ $pengirim->nama ?? $a->user->email }}
-                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                    <span class="fw-bold">{{ $namaPengirim }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ $detailPengirim }}</small>
                                 
                                 
                                 <td>{{ $a->kategori->nama_kategori ?? '-' }}</td>
@@ -87,7 +99,7 @@
                               
                             @empty
                                 32
-                                    <td colspan="7" class="text-center">Tidak ada aspirasi aktif</td>
+                                    <td colspan="7" class="text-center">Tidak ada aspirasi aktif</span>
                                 
                             @endforelse
                         </tbody>
@@ -103,7 +115,7 @@
     </div>
     <div class="col-md-4">
         <!-- Statistik Persentase Status -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0"><i class="ph ph-pie-chart"></i> Persentase Status</h6>
             </div>
@@ -117,8 +129,8 @@
                 
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
-                        <span>Menunggu</span>
-                        <span>{{ $persenMenunggu }}%</span>
+                        <span><i class="ph ph-clock"></i> Menunggu</span>
+                        <span class="badge bg-warning">{{ $aspirasiMenunggu }} ({{ $persenMenunggu }}%)</span>
                     </div>
                     <div class="progress">
                         <div class="progress-bar bg-warning" style="width: {{ $persenMenunggu }}%"></div>
@@ -127,8 +139,8 @@
                 
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
-                        <span>Diproses</span>
-                        <span>{{ $persenProses }}%</span>
+                        <span><i class="ph ph-spinner"></i> Diproses</span>
+                        <span class="badge bg-info">{{ $aspirasiProses }} ({{ $persenProses }}%)</span>
                     </div>
                     <div class="progress">
                         <div class="progress-bar bg-info" style="width: {{ $persenProses }}%"></div>
@@ -137,8 +149,8 @@
                 
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
-                        <span>Selesai</span>
-                        <span>{{ $persenSelesai }}%</span>
+                        <span><i class="ph ph-check-circle"></i> Selesai</span>
+                        <span class="badge bg-success">{{ $aspirasiSelesai }} ({{ $persenSelesai }}%)</span>
                     </div>
                     <div class="progress">
                         <div class="progress-bar bg-success" style="width: {{ $persenSelesai }}%"></div>
@@ -147,6 +159,7 @@
             </div>
         </div>
         
+        <!-- Informasi Petugas -->
         <div class="card mt-3">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0"><i class="ph ph-info"></i> Informasi Petugas</h6>
@@ -155,79 +168,10 @@
                 <table class="table table-sm">
                     <tr><th>Nama</th><td>{{ $petugas->nama }}</td></tr>
                     <tr><th>NIP</th><td>{{ $petugas->nip ?? '-' }}</td></tr>
-                    <tr><th>Status</th><td><span class="badge bg-{{ $petugas->status_badge }}">{{ $petugas->status }}</span></td></tr>
+                    <tr><th>Status</th><td><span class="badge bg-{{ $petugas->status_badge }}">{{ $petugas->status }}</span></span>
                 </table>
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const canvas = document.getElementById('chartAspirasi');
-        if (canvas) {
-            const labels = {!! json_encode($bulanLabels ?? []) !!};
-            const data = {!! json_encode($bulanData ?? []) !!};
-            
-            console.log('Petugas - Labels:', labels);
-            console.log('Petugas - Data:', data);
-            
-            if (labels.length > 0 && data.length > 0) {
-                new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Jumlah Aspirasi',
-                            data: data,
-                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
-                            borderColor: '#4f46e5',
-                            borderWidth: 1,
-                            borderRadius: 5
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return 'Jumlah: ' + context.raw + ' aspirasi';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Jumlah Aspirasi'
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Bulan'
-                                }
-                            }
-                        }
-                    }
-                });
-            } else {
-                canvas.parentElement.innerHTML = '<div class="text-center py-4"><i class="ph ph-chart-line ph-2x text-muted"></i><p class="mt-2">Belum ada data untuk grafik</p></div>';
-            }
-        }
-    });
-</script>
-@endpush

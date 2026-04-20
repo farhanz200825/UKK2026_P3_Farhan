@@ -16,12 +16,10 @@ class DashboardController extends Controller
 
         return view('guru.dashboard', compact('totalAspirasi', 'aspirasiMenunggu', 'aspirasiProses'));
     }
-    // DASHBOARD - Menampilkan ringkasan statistik
     public function dashboard()
     {
         $guru = $this->getGuru();
 
-        // Statistik
         $statistik = [
             'total' => Aspirasi::count(),
             'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
@@ -29,7 +27,6 @@ class DashboardController extends Controller
             'selesai' => Aspirasi::where('status', 'Selesai')->count(),
         ];
 
-        // Aspirasi terbaru (5 terakhir)
         if ($guru->canCreateAspirasi()) {
             $aspirasiTerbaru = Aspirasi::with(['kategori', 'ruangan'])
                 ->where('user_id', Auth::id())
@@ -45,7 +42,6 @@ class DashboardController extends Controller
             $aspirasiTerbaru = collect();
         }
 
-        // Data untuk grafik - ambil 6 bulan terakhir
         $bulanLabels = [];
         $bulanData = [];
 
@@ -59,7 +55,6 @@ class DashboardController extends Controller
             $bulanData[] = $count;
         }
 
-        // Debug: cek data ke log
         \Log::info('Grafik Data:', ['labels' => $bulanLabels, 'data' => $bulanData]);
 
         return view('guru.dashboard', compact('guru', 'statistik', 'aspirasiTerbaru', 'bulanLabels', 'bulanData'));

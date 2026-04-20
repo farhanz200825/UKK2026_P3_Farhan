@@ -13,7 +13,6 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // Ambil data tambahan berdasarkan role
         if ($user->role == 'siswa') {
             $profile = $user->siswa;
         } elseif ($user->role == 'guru') {
@@ -29,7 +28,6 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // Load relasi sesuai role
         if ($user->role == 'siswa') {
             $user->load('siswa');
             $profile = $user->siswa;
@@ -59,15 +57,12 @@ class ProfileController extends Controller
             'password' => 'nullable|min:6|confirmed'
         ]);
 
-        // Update user email
         $user->update(['email' => $request->email]);
 
-        // Update password jika diisi
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        // Update data profile berdasarkan role
         if ($user->role == 'siswa' && $user->siswa) {
             $user->siswa->update([
                 'nama' => $request->nama ?? $user->siswa->nama,
@@ -109,19 +104,16 @@ class ProfileController extends Controller
 
         $user = Auth::user();
 
-        // Hapus foto lama jika ada
         if ($user->role == 'siswa' && $user->siswa && $user->siswa->foto) {
             Storage::delete('public/' . $user->siswa->foto);
         } elseif ($user->role == 'guru' && $user->guru && $user->guru->foto) {
             Storage::delete('public/' . $user->guru->foto);
         }
 
-        // Upload foto baru
         $file = $request->file('foto');
         $filename = time() . '_' . $file->getClientOriginalName();
         $path = $file->storeAs('public/foto_profil', $filename);
 
-        // Simpan path ke database
         if ($user->role == 'siswa' && $user->siswa) {
             $user->siswa->update(['foto' => 'foto_profil/' . $filename]);
         } elseif ($user->role == 'guru' && $user->guru) {

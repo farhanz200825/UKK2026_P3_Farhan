@@ -440,26 +440,78 @@
                             @php
                             use App\Models\Aspirasi;
                             use App\Models\Progres;
+                            use App\Models\HistoryStatus;
 
                             $user = Auth::user();
                             $notifikasiCount = 0;
                             $notifikasiList = [];
 
                             if($user->role == 'admin') {
+                            // Admin: notifikasi aspirasi baru (Menunggu)
                             $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
                             $notifikasiCount += $aspirasiBaru;
+
                             foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
+                            $pengirim = $asp->user->siswa->nama ?? $asp->user->email;
+                            $kelas = $asp->user->siswa->kelas ?? '-';
                             $notifikasiList[] = [
                             'type' => 'new',
                             'title' => 'Aspirasi Baru',
-                            'message' => 'Dari: ' . ($asp->user->siswa->nama ?? $asp->user->email),
+                            'message' => "Dari: {$pengirim} (Kelas: {$kelas})",
                             'time' => $asp->created_at->diffForHumans(),
                             'link' => route('admin.pengaduan.detail', $asp->id_aspirasi)
                             ];
                             }
                             } elseif($user->role == 'guru') {
+                            $guru = $user->guru;
+
+                            if($guru->jabatan == 'Wali Kelas') {
+                            // Wali Kelas: notifikasi aspirasi dari kelas yang diampu
+                            $kelasId = $guru->id_kelas;
+                            if($kelasId) {
+                            $aspirasiBaru = Aspirasi::where('status', 'Menunggu')
+                            ->whereHas('user.siswa', function($q) use ($kelasId) {
+                            $q->where('id_kelas', $kelasId);
+                            })->count();
+                            $notifikasiCount += $aspirasiBaru;
+
+                            foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')
+                            ->whereHas('user.siswa', function($q) use ($kelasId) {
+                            $q->where('id_kelas', $kelasId);
+                            })->latest()->take(5)->get() as $asp) {
+                            $notifikasiList[] = [
+                            'type' => 'new',
+                            'title' => 'Aspirasi Baru di Kelas',
+                            'message' => 'Dari: ' . ($asp->user->siswa->nama ?? $asp->user->email),
+                            'time' => $asp->created_at->diffForHumans(),
+                            'link' => route('guru.aspirasi.detail', $asp->id_aspirasi)
+                            ];
+                            }
+                            }
+                            } elseif($guru->jabatan == 'Guru') {
+                            // Guru biasa: notifikasi aspirasi yang dia buat sendiri
+                            $aspirasiProgres = Progres::whereHas('aspirasi', function($q) use ($user) {
+                            $q->where('user_id', $user->id);
+                            })->where('created_at', '>=', now()->subDays(7))->count();
+                            $notifikasiCount += $aspirasiProgres;
+
+                            $aspirasiIds = Aspirasi::where('user_id', $user->id)->pluck('id_aspirasi');
+                            foreach(Progres::with('user')->whereIn('id_aspirasi', $aspirasiIds)->latest()->take(5)->get() as $prog) {
+                            $isFeedback = str_contains($prog->keterangan_progres, 'Feedback:');
+                            $pengirim = $prog->user->petugas->nama ?? $prog->user->guru->nama ?? $prog->user->email;
+                            $notifikasiList[] = [
+                            'type' => $isFeedback ? 'feedback' : 'progress',
+                            'title' => $isFeedback ? 'Feedback Baru' : 'Update Progres',
+                            'message' => $isFeedback ? str_replace('Feedback: ', '', substr($prog->keterangan_progres, 0, 50)) : substr($prog->keterangan_progres, 0, 50),
+                            'time' => $prog->created_at->diffForHumans(),
+                            'link' => route('guru.aspirasi.detail', $prog->id_aspirasi)
+                            ];
+                            }
+                            } else {
+                            // Kepala Sekolah, Wakil, Kepala Jurusan: notifikasi aspirasi baru (Menunggu)
                             $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
                             $notifikasiCount += $aspirasiBaru;
+
                             foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
                             $notifikasiList[] = [
                             'type' => 'new',
@@ -469,9 +521,12 @@
                             'link' => route('guru.aspirasi.detail', $asp->id_aspirasi)
                             ];
                             }
+                            }
                             } elseif($user->role == 'petugas') {
+                            // Petugas: notifikasi aspirasi baru (Menunggu)
                             $aspirasiBaru = Aspirasi::where('status', 'Menunggu')->count();
                             $notifikasiCount += $aspirasiBaru;
+
                             foreach(Aspirasi::with('user.siswa')->where('status', 'Menunggu')->latest()->take(5)->get() as $asp) {
                             $notifikasiList[] = [
                             'type' => 'new',
@@ -482,13 +537,16 @@
                             ];
                             }
                             } elseif($user->role == 'siswa') {
+                            // Siswa: notifikasi progres/feedback pada aspirasinya
                             $progresBaru = Progres::whereHas('aspirasi', function($q) use ($user) {
                             $q->where('user_id', $user->id);
                             })->where('created_at', '>=', now()->subDays(7))->count();
                             $notifikasiCount += $progresBaru;
+
                             $aspirasiIds = Aspirasi::where('user_id', $user->id)->pluck('id_aspirasi');
                             foreach(Progres::with('user')->whereIn('id_aspirasi', $aspirasiIds)->latest()->take(5)->get() as $prog) {
                             $isFeedback = str_contains($prog->keterangan_progres, 'Feedback:');
+                            $pengirim = $prog->user->petugas->nama ?? $prog->user->guru->nama ?? $prog->user->email;
                             $notifikasiList[] = [
                             'type' => $isFeedback ? 'feedback' : 'progress',
                             'title' => $isFeedback ? 'Feedback Baru' : 'Update Progres',
@@ -545,6 +603,11 @@
                                 </div>
                                 @endif
                             </div>
+                            @if(count($notifikasiList) > 0)
+                            <div class="dropdown-footer text-center py-2 border-top">
+                                <a href="#" class="text-primary small">Lihat semua notifikasi</a>
+                            </div>
+                            @endif
                         </div>
                     </li>
                 </ul>

@@ -52,13 +52,11 @@ class Siswa extends Model
         return $this->belongsTo(Jurusan::class, 'id_jurusan');
     }
     
-    // Cek apakah sudah punya PIN
     public function hasPin()
     {
         return !is_null($this->pin);
     }
     
-    // Verifikasi PIN
     public function verifyPin($pin)
     {
         if ($this->pin && Hash::check($pin, $this->pin)) {
@@ -67,7 +65,6 @@ class Siswa extends Model
         return false;
     }
     
-    // Buat PIN baru (hanya bisa sekali)
     public function createPin($pin)
     {
         if ($this->hasPin()) {

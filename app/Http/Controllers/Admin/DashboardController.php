@@ -22,7 +22,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
-    // Dashboard dengan statistik
     public function index()
     {
         $totalSiswa = Siswa::count();
@@ -64,16 +63,13 @@ class DashboardController extends Controller
         $siswas = Siswa::with('user', 'kelasRelasi', 'jurusanRelasi')->get();
         $petugas = Petugas::with('user')->get();
 
-        // Ambil semua kelas
         $allKelas = Kelas::with('jurusan')->get();
 
-        // Ambil ID kelas yang sudah memiliki Wali Kelas
         $kelasTerpakai = Guru::where('jabatan', 'Wali Kelas')
             ->whereNotNull('id_kelas')
             ->pluck('id_kelas')
             ->toArray();
 
-        // Kelas yang tersedia (belum ada wali kelas)
         $kelasTersedia = Kelas::whereNotIn('id_kelas', $kelasTerpakai)->get();
 
         $allJurusan = Jurusan::all();
@@ -81,7 +77,7 @@ class DashboardController extends Controller
         return view('admin.users.index', compact('admins', 'gurus', 'siswas', 'petugas', 'allKelas', 'allJurusan', 'kelasTersedia', 'kelasTerpakai'));
     }
 
-    // ==================== CRUD SISWA ====================
+
     public function storeSiswa(Request $request)
     {
         $request->validate([
@@ -208,7 +204,6 @@ class DashboardController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        // Cek apakah kelas sudah memiliki Wali Kelas
         if ($request->jabatan == 'Wali Kelas' && $request->id_kelas) {
             $existingWaliKelas = Guru::where('jabatan', 'Wali Kelas')
                 ->where('id_kelas', $request->id_kelas)
@@ -268,7 +263,6 @@ class DashboardController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        // Cek apakah kelas sudah memiliki Wali Kelas lain
         if ($request->jabatan == 'Wali Kelas' && $request->id_kelas) {
             $existingWaliKelas = Guru::where('jabatan', 'Wali Kelas')
                 ->where('id_kelas', $request->id_kelas)
@@ -326,7 +320,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Guru berhasil dihapus');
     }
 
-    // ==================== CRUD ADMIN ====================
     public function storeAdmin(Request $request)
     {
         $request->validate([
@@ -376,7 +369,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Admin berhasil dihapus');
     }
 
-    // ==================== CRUD PETUGAS ====================
     public function storePetugas(Request $request)
     {
         $request->validate([
@@ -477,7 +469,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.users')->with('success', 'Petugas berhasil dihapus');
     }
 
-    // ==================== MANAJEMEN KATEGORI & MASTER DATA ====================
     public function kategori()
     {
         $kategoris = Kategori::withCount('aspirasi')->get();
@@ -528,7 +519,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil dihapus');
     }
 
-    // ==================== CRUD JURUSAN ====================
     public function storeJurusan(Request $request)
     {
         $request->validate([
@@ -561,7 +551,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.kategori')->with('success', 'Jurusan berhasil dihapus');
     }
 
-    // ==================== CRUD KELAS ====================
     public function storeKelas(Request $request)
     {
         $request->validate([
@@ -596,7 +585,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.kategori')->with('success', 'Kelas berhasil dihapus');
     }
 
-    // ==================== CRUD RUANGAN ====================
     public function storeRuangan(Request $request)
     {
         $request->validate([
@@ -637,14 +625,11 @@ class DashboardController extends Controller
         return redirect()->route('admin.kategori')->with('success', 'Ruangan berhasil dihapus');
     }
 
-    // ==================== ASPIRASI MANAGEMENT ====================
-    // Data Aspirasi - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
     public function pengaduan(Request $request)
     {
         $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres'])
-            ->where('status', '!=', 'Selesai'); // HANYA yang belum selesai
+            ->where('status', '!=', 'Selesai');
 
-        // Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -676,7 +661,6 @@ class DashboardController extends Controller
         $kategoris = Kategori::all();
         $ruangans = Ruangan::all();
 
-        // Statistik (semua status)
         $statistik = [
             'total' => Aspirasi::count(),
             'menunggu' => Aspirasi::where('status', 'Menunggu')->count(),
@@ -736,7 +720,6 @@ class DashboardController extends Controller
         $statusLama = $aspirasi->status;
         $statusBaru = $request->status;
 
-        // Simpan history status
         HistoryStatus::create([
             'id_aspirasi' => $id,
             'status_lama' => $statusLama,
@@ -744,16 +727,13 @@ class DashboardController extends Controller
             'diubah_oleh' => auth()->id(),
         ]);
 
-        // Update status
         $aspirasi->update(['status' => $statusBaru]);
 
-        // Handle upload foto bukti jika status Selesai
         $fotoBuktiPath = null;
         if ($request->hasFile('foto_bukti')) {
             $fotoBuktiPath = $request->file('foto_bukti')->store('aspirasi_bukti', 'public');
         }
 
-        // Simpan progres jika ada keterangan
         if ($request->filled('keterangan_progres')) {
             $progresText = $request->keterangan_progres;
             if ($fotoBuktiPath) {
@@ -766,7 +746,6 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Jika status menjadi Selesai, tambahkan progres otomatis
         if ($statusBaru == 'Selesai') {
             $selesaiText = 'Aspirasi telah selesai ditangani oleh Admin';
             if ($fotoBuktiPath) {
@@ -803,9 +782,8 @@ class DashboardController extends Controller
 
     public function history(Request $request)
     {
-        // Hanya ambil history dengan status_baru = Selesai
         $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
-            ->where('status_baru', 'Selesai'); // HANYA yang statusnya menjadi Selesai
+            ->where('status_baru', 'Selesai'); 
 
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -819,15 +797,14 @@ class DashboardController extends Controller
 
         $statistik = [
             'total' => HistoryStatus::where('status_baru', 'Selesai')->count(),
-            'menunggu' => 0, // Tidak ada karena hanya Selesai
-            'proses' => 0,    // Tidak ada karena hanya Selesai
+            'menunggu' => 0,
+            'proses' => 0,  
             'selesai' => HistoryStatus::where('status_baru', 'Selesai')->count(),
         ];
 
         return view('admin.history', compact('history', 'statistik'));
     }
 
-    // ==================== IMPORT SISWA ====================
     public function importSiswa(Request $request)
     {
         $request->validate(['file_excel' => 'required|mimes:xlsx,xls,csv|max:2048']);
@@ -862,7 +839,6 @@ class DashboardController extends Controller
         }
     }
 
-    // Download template Excel
     public function downloadTemplateSiswa()
     {
         $headers = ['nis', 'nama', 'kelas', 'jurusan', 'jenis_kelamin', 'tanggal_lahir', 'no_hp', 'email', 'password', 'alamat'];

@@ -17,19 +17,16 @@ class DashboardController extends Controller
     {
         $petugas = Auth::user()->petugas;
 
-        // Statistik
         $totalAspirasi = Aspirasi::count();
         $aspirasiMenunggu = Aspirasi::where('status', 'Menunggu')->count();
         $aspirasiProses = Aspirasi::where('status', 'Proses')->count();
         $aspirasiSelesai = Aspirasi::where('status', 'Selesai')->count();
 
-        // Aspirasi yang perlu ditangani (Menunggu dan Proses)
         $aspirasiAktif = Aspirasi::with(['user.siswa', 'kategori', 'ruangan'])
             ->whereIn('status', ['Menunggu', 'Proses'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Aspirasi per bulan (6 bulan terakhir)
         $bulanLabels = [];
         $bulanData = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -52,11 +49,10 @@ class DashboardController extends Controller
         ));
     }
 
-    // Data Aspirasi - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
     public function aspirasiIndex(Request $request)
     {
         $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan', 'progres'])
-            ->where('status', '!=', 'Selesai'); // Hanya yang belum selesai
+            ->where('status', '!=', 'Selesai');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -108,7 +104,6 @@ class DashboardController extends Controller
         $statusLama = $aspirasi->status;
         $statusBaru = $request->status;
 
-        // Simpan history status
         HistoryStatus::create([
             'id_aspirasi' => $id,
             'status_lama' => $statusLama,
@@ -116,7 +111,6 @@ class DashboardController extends Controller
             'diubah_oleh' => Auth::id(),
         ]);
 
-        // Update status
         $aspirasi->update(['status' => $statusBaru]);
 
         $fotoBuktiPath = null;
@@ -124,7 +118,6 @@ class DashboardController extends Controller
             $fotoBuktiPath = $request->file('foto_bukti')->store('aspirasi_bukti', 'public');
         }
 
-        // Simpan progres dengan link foto
         if ($request->filled('keterangan_progres')) {
             $progresText = $request->keterangan_progres;
             if ($fotoBuktiPath) {
@@ -137,7 +130,6 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Jika status menjadi Selesai, tambahkan progres otomatis
         if ($statusBaru == 'Selesai') {
             $selesaiText = 'Aspirasi telah selesai ditangani oleh Petugas ' . Auth::user()->petugas->nama;
             if ($fotoBuktiPath) {

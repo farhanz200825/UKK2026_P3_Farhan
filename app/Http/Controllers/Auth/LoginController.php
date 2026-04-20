@@ -33,10 +33,8 @@ class LoginController extends Controller
         $login = $request->login;
         $password = $request->password;
         
-        // Cari user berdasarkan email (admin, guru, siswa, petugas)
         $user = User::where('email', $login)->first();
         
-        // Jika tidak ditemukan, cari berdasarkan NIP (guru)
         if (!$user) {
             $guru = Guru::where('nip', $login)->first();
             if ($guru) {
@@ -44,7 +42,6 @@ class LoginController extends Controller
             }
         }
         
-        // Jika masih tidak ditemukan, cari berdasarkan NIS (siswa)
         if (!$user) {
             $siswa = Siswa::where('nis', $login)->first();
             if ($siswa) {
@@ -52,7 +49,6 @@ class LoginController extends Controller
             }
         }
         
-        // Jika masih tidak ditemukan, cari berdasarkan NIP (petugas)
         if (!$user) {
             $petugas = Petugas::where('nip', $login)->first();
             if ($petugas) {
@@ -60,11 +56,9 @@ class LoginController extends Controller
             }
         }
         
-        // Jika user ditemukan dan password cocok
         if ($user && Hash::check($password, $user->password)) {
             Auth::login($user);
             
-            // Redirect berdasarkan role
             if ($user->role === 'admin') {
                 return redirect()->intended(route('admin.dashboard'));
             } elseif ($user->role === 'guru') {
@@ -76,7 +70,6 @@ class LoginController extends Controller
             }
         }
         
-        // Jika login gagal
         return back()->withErrors([
             'login' => 'Email/NIP/NIS atau password salah.',
         ])->withInput($request->only('login'));
