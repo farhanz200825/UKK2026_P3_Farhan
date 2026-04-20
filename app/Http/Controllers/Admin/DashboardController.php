@@ -881,35 +881,4 @@ class DashboardController extends Controller
             'Content-Disposition' => 'attachment; filename="template_siswa.csv"',
         ]);
     }
-    // Generate token untuk siswa
-    public function generateToken($id)
-    {
-        $siswa = Siswa::findOrFail($id);
-
-        // Generate token 8 karakter acak
-        $token = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ123456789'), 0, 8));
-
-        // Simpan token yang sudah di-hash
-        $siswa->update([
-            'token' => Hash::make($token),
-            'pin' => null,
-            'pin_verified_at' => null
-        ]);
-
-        // Kirim token via session (bisa juga via WhatsApp nanti)
-        return redirect()->back()->with('success', "Token untuk siswa {$siswa->nama} berhasil dibuat!<br><strong>Token: {$token}</strong><br>Berikan token ini kepada siswa untuk membuat PIN.");
-    }
-
-    // Reset token siswa
-    public function resetToken($id)
-    {
-        $siswa = Siswa::findOrFail($id);
-        $siswa->update([
-            'token' => null,
-            'pin' => null,
-            'pin_verified_at' => null
-        ]);
-
-        return redirect()->back()->with('success', "Token untuk siswa {$siswa->nama} berhasil direset!");
-    }
 }

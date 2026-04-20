@@ -9,13 +9,7 @@
             <div class="card-header">
                 <ul class="nav nav-tabs card-header-tabs" id="userTab" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active" id="admin-tab" data-bs-toggle="tab"
-                            data-bs-target="#tab-admin" type="button" role="tab">
-                            <i class="ph ph-shield-check"></i> Admin
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" id="guru-tab" data-bs-toggle="tab"
+                        <button class="nav-link active" id="guru-tab" data-bs-toggle="tab"
                             data-bs-target="#tab-guru" type="button" role="tab">
                             <i class="ph ph-chalkboard-teacher"></i> Guru
                         </button>
@@ -37,55 +31,8 @@
             <div class="card-body">
                 <div class="tab-content">
 
-                    <!-- ==================== TAB ADMIN ==================== -->
-                    <div class="tab-pane fade show active" id="tab-admin" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0"><i class="ph ph-shield-check"></i> Data Admin</h6>
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createAdminModal">
-                                <i class="ph ph-plus"></i> Tambah Admin
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="5%">No</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Tanggal Daftar</th>
-                                        <th width="15%">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($admins as $index => $admin)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $admin->email }}</td>
-                                        <td><span class="badge bg-primary">Admin</span></td>
-                                        <td>{{ $admin->created_at ? $admin->created_at->format('d/m/Y H:i') : '-' }}</td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#editAdminModal{{ $admin->id }}">
-                                                <i class="ph ph-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#deleteAdminModal{{ $admin->id }}">
-                                                <i class="ph ph-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center">Belum ada data admin</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                     <!-- ==================== TAB GURU ==================== -->
-                    <div class="tab-pane fade" id="tab-guru" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-guru" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="mb-0"><i class="ph ph-chalkboard-teacher"></i> Data Guru</h6>
                             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#createGuruModal">
@@ -184,8 +131,8 @@
                                         <th>Kelas</th>
                                         <th>Jurusan</th>
                                         <th>Email</th>
-                                        <th>Status</th>
-                                        <th width="20%">Aksi</th>
+                                        <th>Status PIN</th>
+                                        <th width="15%">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -208,9 +155,9 @@
                                         <td>{{ $siswa->user->email ?? '-' }}</td>
                                         <td>
                                             @if($siswa->pin)
-                                            <span class="badge bg-success">PIN Aktif</span>
-                                            @elseif($siswa->token)
-                                            <span class="badge bg-warning">Token Diberikan</span>
+                                            <span class="badge bg-success">Aktif</span>
+                                            <br>
+                                            <small class="text-muted">Dibuat: {{ $siswa->pin_created_at ? $siswa->pin_created_at->format('d/m/Y') : '-' }}</small>
                                             @else
                                             <span class="badge bg-danger">Belum</span>
                                             @endif
@@ -226,23 +173,6 @@
                                                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSiswaModal{{ $siswa->id }}">
                                                     <i class="ph ph-trash"></i>
                                                 </button>
-
-                                                @if($siswa->pin)
-                                                <form action="{{ route('admin.siswa.reset-token', $siswa->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Reset PIN siswa ini?')">
-                                                        <i class="ph ph-arrow-counter-clockwise"></i> Reset
-                                                    </button>
-                                                </form>
-                                                @else
-                                                <form action="{{ route('admin.siswa.generate-token', $siswa->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-primary btn-sm">
-                                                        <i class="ph ph-key"></i> Generate Token
-                                                    </button>
-                                                </form>
-                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -306,24 +236,6 @@
 
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== MODAL CREATE ADMIN ==================== -->
-<div class="modal fade" id="createAdminModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Tambah Admin</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ route('admin.admin.store') }}" method="POST">@csrf
-                <div class="modal-body">
-                    <div class="mb-3"><label>Email</label><input type="email" name="email" class="form-control" required></div>
-                    <div class="mb-3"><label>Password</label><input type="password" name="password" class="form-control" required></div>
-                </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
-            </form>
         </div>
     </div>
 </div>
@@ -498,42 +410,7 @@
     </div>
 </div>
 
-<!-- ==================== MODAL EDIT, DELETE UNTUK ADMIN ==================== -->
-@foreach($admins as $admin)
-<div class="modal fade" id="editAdminModal{{ $admin->id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title">Edit Admin</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ route('admin.admin.update', $admin->id) }}" method="POST">@csrf @method('PUT')
-                <div class="modal-body">
-                    <div class="mb-3"><label>Email</label><input type="email" name="email" class="form-control" value="{{ $admin->email }}" required></div>
-                    <div class="mb-3"><label>Password</label><input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diubah"></div>
-                </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-warning">Update</button></div>
-            </form>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="deleteAdminModal{{ $admin->id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Hapus Admin</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <p>Yakin hapus admin <strong>{{ $admin->email }}</strong>?</p>
-            </div>
-            <div class="modal-footer">
-                <form action="{{ route('admin.admin.destroy', $admin->id) }}" method="POST">@csrf @method('DELETE')<button type="submit" class="btn btn-danger">Hapus</button></form>
-            </div>
-        </div>
-    </div>
-</div>
-@endforeach
-
-<!-- ==================== MODAL VIEW, EDIT, DELETE UNTUK GURU ==================== -->
+<!-- ==================== MODAL EDIT, DELETE UNTUK GURU ==================== -->
 @foreach($gurus as $guru)
 <div class="modal fade" id="viewGuruModal{{ $guru->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -560,8 +437,6 @@
     </div>
 </div>
 
-<!-- ==================== MODAL EDIT GURU ==================== -->
-@foreach($gurus as $guru)
 <div class="modal fade" id="editGuruModal{{ $guru->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -589,7 +464,6 @@
                             <select name="id_kelas" class="form-select" id="kelasSelectEdit{{ $guru->id }}">
                                 <option value="">Pilih Kelas</option>
                                 @php
-                                // Kelas yang tersedia (belum dipakai wali kelas lain) + kelas milik sendiri
                                 $kelasTerpakaiLain = \App\Models\Guru::where('jabatan', 'Wali Kelas')
                                 ->where('id', '!=', $guru->id)
                                 ->whereNotNull('id_kelas')
@@ -631,7 +505,6 @@
         </div>
     </div>
 </div>
-@endforeach
 
 <div class="modal fade" id="deleteGuruModal{{ $guru->id }}" tabindex="-1">
     <div class="modal-dialog">
@@ -807,14 +680,12 @@
         jabatanSelectCreate.addEventListener('change', function() {
             if (this.value === 'Wali Kelas') {
                 kelasFieldCreate.style.display = 'block';
-                // Set required attribute pada select kelas
                 document.querySelector('#kelasFieldCreate select').required = true;
             } else {
                 kelasFieldCreate.style.display = 'none';
                 document.querySelector('#kelasFieldCreate select').required = false;
             }
         });
-        // Trigger on load
         if (jabatanSelectCreate.value === 'Wali Kelas') {
             kelasFieldCreate.style.display = 'block';
             document.querySelector('#kelasFieldCreate select').required = true;
@@ -831,7 +702,6 @@
                 jabatanSelect.addEventListener('change', function() {
                     if (this.value === 'Wali Kelas') {
                         kelasField.style.display = 'block';
-                        // Set required attribute pada select kelas
                         const kelasSelect = kelasField.querySelector('select');
                         if (kelasSelect) kelasSelect.required = true;
                     } else {

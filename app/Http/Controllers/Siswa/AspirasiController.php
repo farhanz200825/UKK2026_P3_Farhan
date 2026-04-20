@@ -203,44 +203,38 @@ class AspirasiController extends Controller
         return view('siswa.profile', compact('siswa'));
     }
     // Halaman setup PIN
-public function setupPin()
-{
-    $siswa = Auth::user()->siswa;
-    
-    // Jika sudah punya PIN, redirect ke dashboard
-    if ($siswa->hasPin()) {
-        return redirect()->route('siswa.dashboard')->with('info', 'Anda sudah memiliki PIN. PIN digunakan untuk membuat aspirasi.');
-    }
-    
-    return view('siswa.setup-pin');
-}
+    public function setupPin()
+    {
+        $siswa = Auth::user()->siswa;
 
-// Proses setup PIN
-public function storePin(Request $request)
-{
-    $request->validate([
-        'token' => 'required|string',
-        'pin' => 'required|string|size:6|confirmed',
-        'pin_confirmation' => 'required'
-    ]);
-    
-    $siswa = Auth::user()->siswa;
-    
-    // Verifikasi token
-    if (!$siswa->verifyToken($request->token)) {
-        return redirect()->back()
-            ->with('error', 'Token yang Anda masukkan salah!')
-            ->withInput();
+        // Jika sudah punya PIN, redirect ke dashboard
+        if ($siswa->hasPin()) {
+            return redirect()->route('siswa.dashboard')->with('info', 'Anda sudah memiliki PIN. PIN tidak dapat diubah atau direset.');
+        }
+
+        return view('siswa.setup-pin');
     }
-    
-    // Simpan PIN
-    $siswa->update([
-        'pin' => Hash::make($request->pin),
-        'pin_verified_at' => now(),
-        'token' => null // Hapus token setelah digunakan
-    ]);
-    
-    return redirect()->route('siswa.dashboard')
-        ->with('success', 'PIN berhasil dibuat! Sekarang Anda dapat membuat aspirasi dengan menggunakan PIN.');
-}
+
+    // Proses setup PIN (hanya sekali seumur hidup)
+    public function storePin(Request $request)
+    {
+        $request->validate([
+            'pin' => 'required|string|size:6|confirmed',
+            'pin_confirmation' => 'required'
+        ]);
+
+        $siswa = Auth::user()->siswa;
+
+        // Cek apakah sudah punya PIN
+        if ($siswa->hasPin()) {
+            return redirect()->route('siswa.dashboard')
+                ->with('error', 'Anda sudah memiliki PIN. PIN tidak dapat diubah atau direset!');
+        }
+
+        // Simpan PIN
+        $siswa->createPin($request->pin);
+
+        return redirect()->route('siswa.dashboard')
+            ->with('success', 'PIN berhasil dibuat! PIN ini akan digunakan setiap kali Anda membuat aspirasi. Simpan PIN Anda dengan baik karena tidak dapat diubah.');
+    }
 }

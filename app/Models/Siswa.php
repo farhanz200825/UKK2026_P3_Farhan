@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class Siswa extends Model
 {
@@ -25,14 +26,13 @@ class Siswa extends Model
         'foto',
         'id_kelas',
         'id_jurusan',
-        'token',
         'pin',
-        'pin_verified_at'
+        'pin_created_at'
     ];
     
     protected $casts = [
         'tanggal_lahir' => 'date',
-        'pin_verified_at' => 'datetime',
+        'pin_created_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
@@ -52,27 +52,33 @@ class Siswa extends Model
         return $this->belongsTo(Jurusan::class, 'id_jurusan');
     }
     
-    // Verifikasi token
-    public function verifyToken($token)
+    // Cek apakah sudah punya PIN
+    public function hasPin()
     {
-        if ($this->token && \Hash::check($token, $this->token)) {
-            return true;
-        }
-        return false;
+        return !is_null($this->pin);
     }
     
     // Verifikasi PIN
     public function verifyPin($pin)
     {
-        if ($this->pin && \Hash::check($pin, $this->pin)) {
+        if ($this->pin && Hash::check($pin, $this->pin)) {
             return true;
         }
         return false;
     }
     
-    // Cek apakah PIN sudah dibuat
-    public function hasPin()
+    // Buat PIN baru (hanya bisa sekali)
+    public function createPin($pin)
     {
-        return !is_null($this->pin);
+        if ($this->hasPin()) {
+            return false;
+        }
+        
+        $this->update([
+            'pin' => Hash::make($pin),
+            'pin_created_at' => now()
+        ]);
+        
+        return true;
     }
 }

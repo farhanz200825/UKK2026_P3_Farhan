@@ -37,28 +37,22 @@
                 </div>
                 @endif
                 
-                <div class="alert alert-info mb-4">
-                    <i class="ph ph-info"></i>
-                    <strong>Informasi:</strong> Anda akan membuat PIN untuk keamanan saat membuat aspirasi.
-                    PIN ini akan digunakan setiap kali Anda ingin mengirim aspirasi.
+                <div class="alert alert-warning mb-4">
+                    <i class="ph ph-warning"></i>
+                    <strong>Perhatian!</strong> 
+                    <ul class="mb-0 mt-2">
+                        <li>PIN hanya bisa dibuat <strong>SATU KALI</strong></li>
+                        <li>PIN tidak dapat diubah atau direset</li>
+                        <li>PIN akan digunakan setiap kali Anda membuat aspirasi</li>
+                        <li>Simpan PIN Anda dengan baik</li>
+                    </ul>
                 </div>
                 
                 <form method="POST" action="{{ route('siswa.setup-pin.store') }}">
                     @csrf
                     
                     <div class="mb-3">
-                        <label class="form-label">Token Verifikasi <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="ph ph-ticket"></i></span>
-                            <input type="text" name="token" class="form-control" 
-                                   placeholder="Masukkan token dari admin/guru" 
-                                   value="{{ old('token') }}" required>
-                        </div>
-                        <small class="text-muted">Token diberikan oleh admin atau guru</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">PIN (6 digit) <span class="text-danger">*</span></label>
+                        <label class="form-label">Buat PIN (6 digit) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="ph ph-key"></i></span>
                             <input type="password" name="pin" class="form-control" 
@@ -71,7 +65,7 @@
                                 <i class="ph ph-eye"></i>
                             </button>
                         </div>
-                        <small class="text-muted">Buat PIN 6 digit yang mudah diingat</small>
+                        <small class="text-muted">Buat PIN 6 digit yang mudah diingat (hanya angka)</small>
                     </div>
                     
                     <div class="mb-3">
@@ -79,7 +73,7 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="ph ph-key"></i></span>
                             <input type="password" name="pin_confirmation" class="form-control" 
-                                   placeholder="Konfirmasi PIN" 
+                                   placeholder="Ketik ulang PIN" 
                                    maxlength="6" 
                                    pattern="[0-9]{6}"
                                    required>
@@ -90,17 +84,16 @@
                         <small class="text-muted">Ketik ulang PIN yang sama</small>
                     </div>
                     
-                    <div class="alert alert-warning">
-                        <i class="ph ph-warning"></i>
-                        <strong>Perhatian!</strong> Simpan PIN Anda dengan baik. PIN ini diperlukan setiap kali Anda membuat aspirasi.
+                    <div class="alert alert-danger" id="pinMismatch" style="display: none;">
+                        <i class="ph ph-x-circle"></i> PIN tidak cocok!
                     </div>
                     
                     <div class="d-flex justify-content-between gap-2">
                         <a href="{{ route('siswa.dashboard') }}" class="btn btn-secondary">
                             <i class="ph ph-arrow-left"></i> Kembali
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ph ph-floppy-disk"></i> Simpan PIN
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="ph ph-floppy-disk"></i> Buat PIN
                         </button>
                     </div>
                 </form>
@@ -120,5 +113,27 @@
             this.querySelector('i').classList.toggle('ph-eye-slash');
         });
     });
+    
+    // Validasi PIN match
+    const pinInput = document.querySelector('input[name="pin"]');
+    const pinConfirmInput = document.querySelector('input[name="pin_confirmation"]');
+    const pinMismatch = document.getElementById('pinMismatch');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    function validatePin() {
+        const pin = pinInput.value;
+        const confirm = pinConfirmInput.value;
+        
+        if (confirm.length > 0 && pin !== confirm) {
+            pinMismatch.style.display = 'block';
+            submitBtn.disabled = true;
+        } else {
+            pinMismatch.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+    }
+    
+    pinInput.addEventListener('input', validatePin);
+    pinConfirmInput.addEventListener('input', validatePin);
 </script>
 @endsection

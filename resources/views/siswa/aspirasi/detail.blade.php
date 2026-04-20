@@ -96,39 +96,6 @@
             </div>
         </div>
 
-        @if($aspirasi->status != 'Selesai')
-        <div class="card mt-3">
-            <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="ph ph-chat"></i> Kirim Feedback</h6>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('siswa.aspirasi.feedback', $aspirasi->id_aspirasi) }}" method="POST">
-                    @csrf
-                    <div class="mb-2">
-                        <label class="form-label">Feedback Anda</label>
-                        <textarea name="feedback" class="form-control" rows="3" placeholder="Tulis feedback atau tanggapan Anda..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="ph ph-paper-plane"></i> Kirim Feedback
-                    </button>
-                </form>
-            </div>
-        </div>
-        @else
-        <div class="card mt-3 bg-light">
-            <div class="card-header bg-success text-white">
-                <h6 class="mb-0"><i class="ph ph-star"></i> Apresiasi</h6>
-            </div>
-            <div class="card-body text-center">
-                <i class="ph ph-smiley ph-2x text-success mb-2"></i>
-                <p>Terima kasih atas partisipasi Anda dalam menjaga sarana sekolah.</p>
-                <a href="{{ route('siswa.aspirasi.create') }}" class="btn btn-sm btn-primary">
-                    <i class="ph ph-plus"></i> Buat Aspirasi Baru
-                </a>
-            </div>
-        </div>
-        @endif
-
         <div class="card mt-3">
             <div class="card-header">
                 <h6 class="mb-0"><i class="ph ph-list"></i> Riwayat Progres</h6>
