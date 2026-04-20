@@ -36,14 +36,14 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">No</th>
-                                <th>Tanggal Selesai</th>
-                                <th>ID Aspirasi</th>
-                                <th>Pengirim</th>
-                                <th>Kategori</th>
-                                <th>Ruangan</th>
-                                <th>Status Akhir</th>
-                                <th>Ditangani Oleh</th>
-                                <th>Aksi</th>
+                                <th width="12%">Tanggal Selesai</th>
+                                <th width="5%">ID</th>
+                                <th width="20%">Pengirim</th>
+                                <th width="12%">Kategori</th>
+                                <th width="15%">Ruangan</th>
+                                <th width="8%">Status</th>
+                                <th width="15%">Ditangani Oleh</th>
+                                <th width="8%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,40 +65,72 @@
                                 
                                 
                                 <td>{{ $h->id_aspirasi }}</td>
+                                
+                                <!-- PENGIRIM -->
                                 <td>
                                     @php
                                         $pengirim = $h->aspirasi->user->siswa ?? $h->aspirasi->user->guru;
+                                        $namaPengirim = $pengirim->nama ?? $h->aspirasi->user->email;
+                                        $rolePengirim = $h->aspirasi->user->role;
+                                        $detailPengirim = '';
+                                        
+                                        if($rolePengirim == 'siswa') {
+                                            $kelas = $pengirim->kelasRelasi->nama_kelas ?? $pengirim->kelas ?? '-';
+                                            $detailPengirim = 'Siswa - ' . $kelas;
+                                        } elseif($rolePengirim == 'guru') {
+                                            $jabatan = $pengirim->jabatan ?? '-';
+                                            $detailPengirim = 'Guru - ' . $jabatan;
+                                        } else {
+                                            $detailPengirim = ucfirst($rolePengirim);
+                                        }
                                     @endphp
-                                    {{ $pengirim->nama ?? $h->aspirasi->user->email }}
-                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                    <span class="fw-bold">{{ $namaPengirim }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ $detailPengirim }}</small>
                                 
                                 
                                 <td>{{ $h->aspirasi->kategori->nama_kategori ?? '-' }}</td>
                                 <td>{{ $h->aspirasi->ruangan->nama_ruangan ?? $h->aspirasi->lokasi }}</td>
-                                <td><span class="badge bg-success">Selesai</span></td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="ph ph-check-circle me-1"></i> Selesai
+                                    </span>
+                                
+                                
+                                <!-- DITANGANI OLEH -->
                                 <td>
                                     @php
                                         $pengubah = $h->pengubah;
                                         $namaPengubah = '-';
+                                        $detailPengubah = '';
+                                        
                                         if($pengubah) {
                                             if($pengubah->role == 'admin') {
                                                 $namaPengubah = 'Admin';
+                                                $detailPengubah = 'Administrator';
                                             } elseif($pengubah->role == 'petugas' && $pengubah->petugas) {
-                                                $namaPengubah = $pengubah->petugas->nama . ' (Petugas)';
+                                                $namaPengubah = $pengubah->petugas->nama;
+                                                $detailPengubah = 'Petugas';
                                             } elseif($pengubah->role == 'guru' && $pengubah->guru) {
-                                                $namaPengubah = $pengubah->guru->nama . ' (' . $pengubah->guru->jabatan . ')';
+                                                $namaPengubah = $pengubah->guru->nama;
+                                                $detailPengubah = 'Guru - ' . ($pengubah->guru->jabatan ?? '-');
                                             } else {
                                                 $namaPengubah = $pengubah->email;
+                                                $detailPengubah = ucfirst($pengubah->role);
                                             }
                                         }
                                     @endphp
-                                    {{ $namaPengubah }}
+                                    <span class="fw-bold">{{ $namaPengubah }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ $detailPengubah }}</small>
                                 
                                 
                                 <td>
-                                    <a href="{{ route('admin.pengaduan.detail', $h->id_aspirasi) }}" class="btn btn-sm btn-info">
-                                        <i class="ph ph-eye"></i> Detail
-                                    </a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('admin.pengaduan.detail', $h->id_aspirasi) }}" class="btn btn-info btn-sm" title="Detail">
+                                            <i class="ph ph-eye"></i>
+                                        </a>
+                                    </div>
                                 
                               
                             @empty
@@ -108,7 +140,7 @@
                                             <i class="ph ph-check-circle ph-2x text-muted"></i>
                                             <p class="mt-2">Belum ada aspirasi yang selesai</p>
                                             <a href="{{ route('admin.pengaduan') }}" class="btn btn-sm btn-primary">
-                                                <i class="ph ph-list"></i> Lihat Data Aspirasi
+                                                <i class="ph ph-list"></i> Lihat Data Aspirasi Aktif
                                             </a>
                                         </div>
                                     </td>

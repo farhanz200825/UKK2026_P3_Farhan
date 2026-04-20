@@ -69,14 +69,14 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">No</th>
-                                <th>ID</th>
-                                <th>Pengirim</th>
-                                <th>Kategori</th>
-                                <th>Ruangan</th>
-                                <th>Keterangan</th>
-                                <th>Status</th>
-                                <th>Tanggal</th>
-                                <th width="15%">Aksi</th>
+                                <th width="5%">ID</th>
+                                <th width="20%">Pengirim</th>
+                                <th width="12%">Kategori</th>
+                                <th width="15%">Ruangan</th>
+                                <th width="20%">Keterangan</th>
+                                <th width="8%">Status</th>
+                                <th width="10%">Tanggal</th>
+                                <th width="5%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,29 +87,53 @@
                                 <td>
                                     @php
                                         $pengirim = $a->user->siswa ?? $a->user->guru;
+                                        $namaPengirim = $pengirim->nama ?? $a->user->email;
+                                        $rolePengirim = $a->user->role;
+                                        $detailPengirim = '';
+                                        
+                                        if($rolePengirim == 'siswa') {
+                                            $kelas = $pengirim->kelasRelasi->nama_kelas ?? $pengirim->kelas ?? '-';
+                                            $detailPengirim = 'Siswa - ' . $kelas;
+                                        } elseif($rolePengirim == 'guru') {
+                                            $jabatan = $pengirim->jabatan ?? '-';
+                                            $detailPengirim = 'Guru - ' . $jabatan;
+                                        } else {
+                                            $detailPengirim = ucfirst($rolePengirim);
+                                        }
                                     @endphp
-                                    {{ $pengirim->nama ?? $a->user->email }}
-                                    <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                                    <span class="fw-bold">{{ $namaPengirim }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ $detailPengirim }}</small>
                                 
                                 
                                 <td>{{ $a->kategori->nama_kategori ?? '-' }}</td>
                                 <td>{{ $a->ruangan->nama_ruangan ?? $a->lokasi }}</td>
-                                <td>{{ Str::limit($a->keterangan, 50) }}</td>
+                                <td>{{ Str::limit($a->keterangan, 50) }}</span>
                                 <td>
-                                    <span class="badge bg-{{ $a->status == 'Proses' ? 'info' : 'warning' }}">
-                                        {{ $a->status }}
+                                    @php
+                                        $statusBadge = 'warning';
+                                        $statusIcon = 'ph-clock';
+                                        if($a->status == 'Proses') {
+                                            $statusBadge = 'info';
+                                            $statusIcon = 'ph-spinner';
+                                        }
+                                    @endphp
+                                    <span class="badge bg-{{ $statusBadge }}">
+                                        <i class="{{ $statusIcon }} me-1"></i> {{ $a->status }}
                                     </span>
                                 
                                 
                                 <td>{{ $a->created_at ? $a->created_at->format('d/m/Y') : '-' }}</td>
                                 <td>
-                                    <a href="{{ route('admin.pengaduan.detail', $a->id_aspirasi) }}" class="btn btn-info btn-sm">
-                                        <i class="ph ph-eye"></i> Detail
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" 
-                                            data-bs-target="#deleteModal{{ $a->id_aspirasi }}">
-                                        <i class="ph ph-trash"></i> Hapus
-                                    </button>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('admin.pengaduan.detail', $a->id_aspirasi) }}" class="btn btn-info btn-sm" title="Detail">
+                                            <i class="ph ph-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" title="Hapus" data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal{{ $a->id_aspirasi }}">
+                                            <i class="ph ph-trash"></i>
+                                        </button>
+                                    </div>
                                 
                               
                             @empty
@@ -145,7 +169,11 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus aspirasi ini?</p>
+                @php
+                    $pengirim = $a->user->siswa ?? $a->user->guru;
+                    $namaPengirim = $pengirim->nama ?? $a->user->email;
+                @endphp
+                <p>Apakah Anda yakin ingin menghapus aspirasi dari <strong>{{ $namaPengirim }}</strong>?</p>
                 <p class="text-danger"><small>Data yang dihapus tidak dapat dikembalikan!</small></p>
             </div>
             <div class="modal-footer">

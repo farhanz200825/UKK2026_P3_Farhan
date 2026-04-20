@@ -14,36 +14,58 @@
                     <tr><th width="30%">Kategori</th><td>{{ $aspirasi->kategori->nama_kategori ?? '-' }}</td></tr>
                     <tr><th>Ruangan</th><td>{{ $aspirasi->ruangan->nama_ruangan ?? $aspirasi->lokasi }}</td></tr>
                     
-                    <!-- TAMBAHKAN BARIS SAKSI DI SINI -->
+                    <!-- BARIS SAKSI -->
                     <tr>
                         <th>Saksi</th>
                         <td>
                             @if($aspirasi->saksi)
-                                {{ $aspirasi->saksi->nama }}
-                                <br><small class="text-muted">{{ $aspirasi->saksi->nis }} - Kelas {{ $aspirasi->saksi->kelasRelasi->nama_kelas ?? $aspirasi->saksi->kelas }}</small>
+                                <span class="fw-bold">{{ $aspirasi->saksi->nama }}</span>
+                                <br>
+                                <small class="text-muted">NIS: {{ $aspirasi->saksi->nis }} | Kelas: {{ $aspirasi->saksi->kelasRelasi->nama_kelas ?? $aspirasi->saksi->kelas }}</small>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
-                        </td>
+                        </span>
                     </tr>
                     
+                    <!-- BARIS PENGIRIM -->
                     <tr>
                         <th>Pengirim</th>
                         <td>
                             @php
                                 $pengirim = $aspirasi->user->siswa ?? $aspirasi->user->guru;
+                                $rolePengirim = $aspirasi->user->role;
+                                $detailPengirim = '';
+                                
+                                if($rolePengirim == 'siswa') {
+                                    $kelas = $pengirim->kelasRelasi->nama_kelas ?? $pengirim->kelas ?? '-';
+                                    $detailPengirim = 'Siswa - Kelas ' . $kelas;
+                                } elseif($rolePengirim == 'guru') {
+                                    $jabatan = $pengirim->jabatan ?? '-';
+                                    $detailPengirim = 'Guru - ' . $jabatan;
+                                } else {
+                                    $detailPengirim = ucfirst($rolePengirim);
+                                }
                             @endphp
-                            {{ $pengirim->nama ?? $aspirasi->user->email }}
-                            <br><small class="text-muted">{{ $pengirim->kelas ?? $pengirim->jabatan ?? '-' }}</small>
+                            <span class="fw-bold">{{ $pengirim->nama ?? $aspirasi->user->email }}</span>
+                            <br>
+                            <small class="text-muted">{{ $detailPengirim }}</small>
                         
 
                     
                     <tr><th>Keterangan</th><td>{{ $aspirasi->keterangan }}</td></tr>
+                    
                     @if($aspirasi->foto)
-                    <tr><th>Foto Awal</th><td><img src="{{ asset('storage/' . $aspirasi->foto) }}" width="200" class="img-thumbnail">Ru
+                    <tr>
+                        <th>Foto Awal</th>
+                        <td>
+                            <img src="{{ asset('storage/' . $aspirasi->foto) }}" alt="Foto Awal" width="250" class="img-thumbnail">
+                        
+
+                     
                     @endif
                     
-                    <!-- TAMPILKAN FOTO BUKTI SELESAI -->
+                    <!-- FOTO BUKTI SELESAI -->
                     @php
                         $fotoBukti = null;
                         $fotoBuktiKeterangan = null;
@@ -67,25 +89,45 @@
                             <br>
                             <small class="text-muted">Foto bukti penanganan setelah selesai</small>
                             @if($fotoBuktiKeterangan)
-                            <br>
-                            <small class="text-muted">Keterangan: {{ Str::limit(str_replace('📎 Foto bukti: ' . $fotoBukti, '', $fotoBuktiKeterangan), 100) }}</small>
+                                <br>
+                                <small class="text-muted">Keterangan: {{ Str::limit(str_replace('📎 Foto bukti: ' . $fotoBukti, '', $fotoBuktiKeterangan), 100) }}</small>
                             @endif
                         
 
                      
                     @endif
                     
-                    <tr><th>Status</th>
+                    <!-- STATUS -->
+                    <td>
+                        <th>Status</th>
                         <td>
-                            <span class="badge bg-{{ $aspirasi->status == 'Selesai' ? 'success' : ($aspirasi->status == 'Proses' ? 'info' : 'warning') }}">
-                                {{ $aspirasi->status }}
+                            @php
+                                $statusClass = 'warning';
+                                $statusIcon = 'ph-clock';
+                                if($aspirasi->status == 'Proses') {
+                                    $statusClass = 'info';
+                                    $statusIcon = 'ph-spinner';
+                                } elseif($aspirasi->status == 'Selesai') {
+                                    $statusClass = 'success';
+                                    $statusIcon = 'ph-check-circle';
+                                }
+                            @endphp
+                            <span class="badge bg-{{ $statusClass }} p-2">
+                                <i class="{{ $statusIcon }} me-1"></i> {{ $aspirasi->status }}
                             </span>
                         
 
                     
-                    <tr><th>Dibuat Pada</th><td>{{ $aspirasi->created_at->format('d/m/Y H:i:s') }}</td></tr>
+                    <tr>
+                        <th>Dibuat Pada</th>
+                        <td>{{ $aspirasi->created_at ? $aspirasi->created_at->format('d/m/Y H:i:s') : '-' }}–
+                    </tr>
+                    
                     @if($aspirasi->status == 'Selesai')
-                    <tr><th>Selesai Pada</th><td>{{ $aspirasi->updated_at->format('d/m/Y H:i:s') }}</td></tr>
+                    <tr>
+                        <th>Selesai Pada</th>
+                        <td>{{ $aspirasi->updated_at ? $aspirasi->updated_at->format('d/m/Y H:i:s') : '-' }}–
+                    </tr>
                     @endif
                 </table>
             </div>
@@ -97,6 +139,7 @@
                 <h6 class="mb-0"><i class="ph ph-chat"></i> Kelola Aspirasi (Admin)</h6>
             </div>
             <div class="card-body">
+                <!-- Form Feedback -->
                 <form action="{{ route('admin.pengaduan.feedback', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
                     @csrf
                     <div class="mb-2">
@@ -110,6 +153,7 @@
                 
                 <hr>
                 
+                <!-- Form Update Progres -->
                 <form action="{{ route('admin.pengaduan.progres', $aspirasi->id_aspirasi) }}" method="POST" class="mb-3">
                     @csrf
                     <div class="mb-2">
@@ -177,8 +221,8 @@
             <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                 @forelse($aspirasi->progres as $progres)
                 <div class="border-start border-primary ps-3 mb-3">
-                    <small class="text-muted">{{ $progres->created_at->format('d/m/Y H:i') }}</small>
-                    <p class="mb-0 small">{{ $progres->keterangan_progres }}</p>
+                    <small class="text-muted">{{ $progres->created_at ? $progres->created_at->format('d/m/Y H:i') : '-' }}</small>
+                    <p class="mb-0 small">{!! nl2br(e($progres->keterangan_progres)) !!}</p>
                     <small class="text-muted">- {{ $progres->user->petugas->nama ?? $progres->user->guru->nama ?? $progres->user->email }}</small>
                 </div>
                 @empty
@@ -195,8 +239,14 @@
             <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                 @forelse($aspirasi->historyStatus as $history)
                 <div class="border-start border-info ps-3 mb-3">
-                    <small class="text-muted">{{ $history->created_at->format('d/m/Y H:i') }}</small>
-                    <p class="mb-0 small">{{ $history->status_lama }} → {{ $history->status_baru }}</p>
+                    <small class="text-muted">{{ $history->created_at ? $history->created_at->format('d/m/Y H:i') : '-' }}</small>
+                    <p class="mb-0 small">
+                        <span class="badge bg-secondary">{{ $history->status_lama }}</span> 
+                        <i class="ph ph-arrow-right"></i> 
+                        <span class="badge bg-{{ $history->status_baru == 'Selesai' ? 'success' : ($history->status_baru == 'Proses' ? 'info' : 'warning') }}">
+                            {{ $history->status_baru }}
+                        </span>
+                    </p>
                     <small class="text-muted">- {{ $history->pengubah->petugas->nama ?? $history->pengubah->guru->nama ?? $history->pengubah->email }}</small>
                 </div>
                 @empty
@@ -210,21 +260,24 @@
 @push('scripts')
 <script>
     // Preview foto
-    document.getElementById('fotoBukti').addEventListener('change', function(e) {
-        const preview = document.getElementById('fotoPreview');
-        const img = document.getElementById('previewImg');
-        
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                img.src = e.target.result;
-                preview.style.display = 'block';
+    const fotoBuktiInput = document.getElementById('fotoBukti');
+    const fotoPreview = document.getElementById('fotoPreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (fotoBuktiInput) {
+        fotoBuktiInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    fotoPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                fotoPreview.style.display = 'none';
             }
-            reader.readAsDataURL(this.files[0]);
-        } else {
-            preview.style.display = 'none';
-        }
-    });
+        });
+    }
     
     // Status change handler
     const statusSelect = document.getElementById('statusSelect');
@@ -235,65 +288,67 @@
     const fotoBukti = document.getElementById('fotoBukti');
     const submitBtn = document.getElementById('submitBtn');
     
-    function checkStatus() {
-        const isSelesai = statusSelect.value === 'Selesai';
-        
-        if (isSelesai) {
-            warningAlert.style.display = 'block';
-            keteranganText.required = true;
-            fotoBukti.required = true;
-            keteranganRequired.style.display = 'inline';
-            fotoRequired.style.display = 'inline';
-            validateForm();
-        } else {
-            warningAlert.style.display = 'none';
-            keteranganText.required = false;
-            fotoBukti.required = false;
-            keteranganRequired.style.display = 'none';
-            fotoRequired.style.display = 'none';
-            keteranganText.classList.remove('is-invalid');
-            fotoBukti.classList.remove('is-invalid');
-        }
-    }
-    
-    function validateForm() {
-        if (statusSelect.value === 'Selesai') {
-            if (!keteranganText.value.trim()) {
-                keteranganText.classList.add('is-invalid');
-            } else {
-                keteranganText.classList.remove('is-invalid');
-            }
+    if (statusSelect) {
+        function checkStatus() {
+            const isSelesai = statusSelect.value === 'Selesai';
             
-            if (!fotoBukti.files.length) {
-                fotoBukti.classList.add('is-invalid');
+            if (isSelesai) {
+                warningAlert.style.display = 'block';
+                keteranganText.required = true;
+                fotoBukti.required = true;
+                keteranganRequired.style.display = 'inline';
+                fotoRequired.style.display = 'inline';
+                validateForm();
             } else {
+                warningAlert.style.display = 'none';
+                keteranganText.required = false;
+                fotoBukti.required = false;
+                keteranganRequired.style.display = 'none';
+                fotoRequired.style.display = 'none';
+                keteranganText.classList.remove('is-invalid');
                 fotoBukti.classList.remove('is-invalid');
             }
         }
-    }
-    
-    statusSelect.addEventListener('change', checkStatus);
-    keteranganText.addEventListener('input', validateForm);
-    fotoBukti.addEventListener('change', validateForm);
-    
-    submitBtn.addEventListener('click', function(e) {
-        if (statusSelect.value === 'Selesai') {
-            if (!keteranganText.value.trim()) {
-                e.preventDefault();
-                keteranganText.classList.add('is-invalid');
-                alert('Harap isi keterangan penanganan!');
-                return false;
-            }
-            if (!fotoBukti.files.length) {
-                e.preventDefault();
-                fotoBukti.classList.add('is-invalid');
-                alert('Harap upload foto bukti penanganan!');
-                return false;
+        
+        function validateForm() {
+            if (statusSelect.value === 'Selesai') {
+                if (!keteranganText.value.trim()) {
+                    keteranganText.classList.add('is-invalid');
+                } else {
+                    keteranganText.classList.remove('is-invalid');
+                }
+                
+                if (!fotoBukti.files.length) {
+                    fotoBukti.classList.add('is-invalid');
+                } else {
+                    fotoBukti.classList.remove('is-invalid');
+                }
             }
         }
-    });
-    
-    checkStatus();
+        
+        statusSelect.addEventListener('change', checkStatus);
+        keteranganText.addEventListener('input', validateForm);
+        fotoBukti.addEventListener('change', validateForm);
+        
+        submitBtn.addEventListener('click', function(e) {
+            if (statusSelect.value === 'Selesai') {
+                if (!keteranganText.value.trim()) {
+                    e.preventDefault();
+                    keteranganText.classList.add('is-invalid');
+                    alert('Harap isi keterangan penanganan!');
+                    return false;
+                }
+                if (!fotoBukti.files.length) {
+                    e.preventDefault();
+                    fotoBukti.classList.add('is-invalid');
+                    alert('Harap upload foto bukti penanganan!');
+                    return false;
+                }
+            }
+        });
+        
+        checkStatus();
+    }
 </script>
 @endpush
 @endsection

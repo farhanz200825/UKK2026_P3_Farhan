@@ -19,7 +19,6 @@ class AspirasiController extends Controller
         return Auth::user()->guru;
     }
 
-    // DASHBOARD - Menampilkan ringkasan statistik
     public function dashboard()
     {
         $guru = $this->getGuru();
@@ -31,16 +30,13 @@ class AspirasiController extends Controller
             'selesai' => Aspirasi::where('status', 'Selesai')->count(),
         ];
 
-        // Aspirasi terbaru (5 terakhir) berdasarkan jabatan
         if ($guru->canCreateAspirasi()) {
-            // GURU: hanya lihat aspirasi yang dia buat sendiri
             $aspirasiTerbaru = Aspirasi::with(['kategori', 'ruangan'])
                 ->where('user_id', Auth::id())
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
         } elseif ($guru->jabatan == 'Wali Kelas') {
-            // WALI KELAS: hanya lihat aspirasi dari kelas yang dia wali
             $kelasId = $guru->getKelasId();
             if ($kelasId) {
                 $aspirasiTerbaru = Aspirasi::with(['user.siswa', 'kategori', 'ruangan'])
@@ -54,7 +50,6 @@ class AspirasiController extends Controller
                 $aspirasiTerbaru = collect();
             }
         } elseif ($guru->canViewAllAspirasi()) {
-            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi
             $aspirasiTerbaru = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
                 ->orderBy('created_at', 'desc')
                 ->take(5)
@@ -63,7 +58,7 @@ class AspirasiController extends Controller
             $aspirasiTerbaru = collect();
         }
 
-        // Statistik per bulan (6 bulan terakhir) untuk grafik
+
         $bulanLabels = [];
         $bulanData = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -77,18 +72,15 @@ class AspirasiController extends Controller
         return view('guru.dashboard', compact('guru', 'statistik', 'aspirasiTerbaru', 'bulanLabels', 'bulanData'));
     }
 
-    // DATA ASPIRASI - Hanya menampilkan yang belum selesai (Menunggu dan Proses)
     public function index(Request $request)
     {
         $guru = $this->getGuru();
 
         if ($guru->canCreateAspirasi() && !$guru->canManageAspirasi()) {
-            // GURU: hanya lihat aspirasi yang dia buat sendiri
             $query = Aspirasi::with(['kategori', 'ruangan'])
                 ->where('user_id', Auth::id())
                 ->where('status', '!=', 'Selesai');
         } elseif ($guru->jabatan == 'Wali Kelas') {
-            // WALI KELAS: bisa pilih lihat aspirasi kelas atau sendiri
             $type = $request->get('type', 'kelas');
 
             if ($type == 'saya') {
@@ -108,14 +100,12 @@ class AspirasiController extends Controller
                 }
             }
         } elseif ($guru->canViewAllAspirasi()) {
-            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: lihat semua aspirasi
             $query = Aspirasi::with(['user.siswa', 'user.guru', 'kategori', 'ruangan'])
                 ->where('status', '!=', 'Selesai');
         } else {
             $query = Aspirasi::whereRaw('1 = 0');
         }
 
-        // Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -154,7 +144,6 @@ class AspirasiController extends Controller
         return view('guru.aspirasi.index', compact('guru', 'aspirasi', 'statistik', 'kategoris', 'ruangans', 'currentType'));
     }
 
-    // FORM BUAT ASPIRASI (khusus Guru dan Wali Kelas)
     public function create()
     {
         $guru = $this->getGuru();
@@ -169,7 +158,6 @@ class AspirasiController extends Controller
         return view('guru.aspirasi.create', compact('guru', 'kategoris', 'ruangans'));
     }
 
-    // STORE ASPIRASI
     public function store(Request $request)
     {
         $guru = $this->getGuru();
@@ -207,7 +195,6 @@ class AspirasiController extends Controller
             ->with('success', 'Aspirasi berhasil dikirim');
     }
 
-    // DETAIL ASPIRASI
     public function detail($id)
     {
         $guru = $this->getGuru();
@@ -221,16 +208,13 @@ class AspirasiController extends Controller
                     ->with('error', 'Data aspirasi tidak ditemukan!');
             }
 
-            // Cek akses berdasarkan jabatan
             $hasAccess = false;
 
             if ($guru->canCreateAspirasi() && !$guru->canManageAspirasi()) {
-                // GURU: hanya bisa lihat aspirasi miliknya sendiri
                 if ($aspirasi->user_id == Auth::id()) {
                     $hasAccess = true;
                 }
             } elseif ($guru->jabatan == 'Wali Kelas') {
-                // WALI KELAS: bisa lihat aspirasi dari kelas yang diampu ATAU milik sendiri
                 $kelasId = $guru->id_kelas;
 
                 if ($aspirasi->user_id == Auth::id()) {
@@ -241,7 +225,6 @@ class AspirasiController extends Controller
                     $hasAccess = true;
                 }
             } elseif ($guru->canViewAllAspirasi()) {
-                // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: bisa lihat semua
                 $hasAccess = true;
             }
 
@@ -260,7 +243,6 @@ class AspirasiController extends Controller
         }
     }
 
-    // STORE FEEDBACK (Hanya untuk Wali Kelas)
     public function storeFeedback(Request $request, $id)
     {
         $guru = $this->getGuru();
@@ -282,7 +264,6 @@ class AspirasiController extends Controller
         return redirect()->back()->with('success', 'Feedback berhasil ditambahkan');
     }
 
-    // STORE PROGRES (Hanya untuk Wali Kelas)
     public function storeProgres(Request $request, $id)
     {
         $guru = $this->getGuru();
@@ -304,7 +285,6 @@ class AspirasiController extends Controller
         return redirect()->back()->with('success', 'Progres berhasil ditambahkan');
     }
 
-    // UPDATE STATUS (Hanya untuk Wali Kelas)
     public function updateStatus(Request $request, $id)
     {
         $guru = $this->getGuru();
@@ -354,26 +334,22 @@ class AspirasiController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
-    // HISTORY - Menampilkan aspirasi yang sudah selesai
     public function history(Request $request)
     {
         $guru = $this->getGuru();
 
-        // Tentukan tipe tampilan
+
         $type = $request->get('type', 'kelas');
         $currentType = $type;
 
-        // Query dasar
         $query = HistoryStatus::with(['aspirasi.user.siswa', 'aspirasi.user.guru', 'aspirasi.kategori', 'aspirasi.ruangan', 'pengubah'])
             ->where('status_baru', 'Selesai');
 
         if ($guru->canCreateAspirasi() && !$guru->canManageAspirasi()) {
-            // GURU BIASA: hanya history sendiri
             $query->whereHas('aspirasi', function ($q) {
                 $q->where('user_id', Auth::id());
             });
         } elseif ($guru->jabatan == 'Wali Kelas') {
-            // WALI KELAS: history dari kelas yang diampu ATAU sendiri
             $kelasId = $guru->getKelasId();
 
             $query->where(function ($q) use ($kelasId, $type) {
@@ -387,20 +363,16 @@ class AspirasiController extends Controller
                             $sq->where('id_kelas', $kelasId);
                         });
                     }
-                    // Juga sertakan history sendiri
                     $q->orWhereHas('aspirasi', function ($sq) {
                         $sq->where('user_id', Auth::id());
                     });
                 }
             });
         } elseif ($guru->canViewAllAspirasi()) {
-            // KEPALA SEKOLAH, WAKIL, KEPALA JURUSAN: semua history
-            // Tidak perlu filter tambahan
         } else {
             $query->whereRaw('1 = 0');
         }
 
-        // Filter tanggal
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -413,7 +385,6 @@ class AspirasiController extends Controller
         return view('guru.history', compact('guru', 'history', 'currentType'));
     }
 
-    // STATISTIK (Untuk Kepala Sekolah, Wakil, Kepala Jurusan)
     public function statistik()
     {
         $guru = $this->getGuru();
